@@ -52,6 +52,8 @@ EXCLUDE_REL_PATHS = {
 TEMPLATE_GLOBS = [
     'README.md', 'LICENSE', '.gitignore', 'serve.example.js',
     'docs/*.md', 'workbuddy_out/README.md',
+    'config/demo/*.json', 'demo_data/*.html', 'demo_data/*.json',
+    'unified_data.example.json', 'runs/demo/*.jsonl',
     'config/*.example.json', 'config/README.md',
     'rules/*.example.json', 'rules/README.md',
     'templates/**/*', 'tools/*.example.py', 'tools/README.md',
@@ -64,12 +66,12 @@ TEMPLATE_GLOBS = [
 # 通用兜底正则（不含任何实例数据）
 GENERIC_PATTERNS = [
     r'1[3-9]\d{9}',
-    r'[\w.+-]+@[\w-]+\.[A-Za-z]{2,}',
+    r'[\w.+-]+@(?!example\.(?:com|org|net)\b)[\w-]+\.[A-Za-z]{2,}',
     r'\b[0-9a-f]{32}\b',
     r'api[_-]?key\s*[:=]\s*["\x27]?[A-Za-z0-9_-]{16,}',
 ]
 DEFAULT_PATTERNS_FILE = 'config/local/sensitive_patterns.json'
-TEXT_EXT = {'.json', '.md', '.py', '.html', '.js', '.txt', '.yml', '.yaml', '.example', ''}
+TEXT_EXT = {'.json', '.jsonl', '.md', '.py', '.html', '.js', '.txt', '.yml', '.yaml', '.example', ''}
 
 
 def rel(p: Path, root: Path) -> str:

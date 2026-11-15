@@ -188,7 +188,7 @@ function parseFlow(flow){
     const vs = viewsOf(it);
     const io = parseFlow(g.flow);
     const MAXC = 3;
-    // 主视图的 badge 常与自己的名字重复（「22 族定制简历 · 22 族」），重复就不显示
+    // 主视图的 badge 常与自己的名字重复（「岗位族定制简历 · 岗位族」），重复就不显示
     const norm = x => String(x || '').replace(/\s+/g, '');
     const badgeOf = v => (v.badge && norm(v.label).indexOf(norm(v.badge)) < 0)
       ? '<span class="cb">' + esc(v.badge) + '</span>' : '';
@@ -224,7 +224,7 @@ function parseFlow(flow){
 
   $('foot').innerHTML =
     '<div>岗位族与样本来自 <code>' + esc(jfOk ? (jf.source || '—') : '未配置') + '</code>' +
-    '，台账来自 <code>runs/*/ledger.jsonl</code>。所有页面只读，写入只发生在「招聘跟踪」主应用。</div>' +
+    '，台账事件来自 <code>runs/*/ledger.jsonl</code>。所有页面只读，写入只发生在主应用（导航里标「可写」的那一页）。</div>' +
     '<div>入口与视图由 <code>config/local/routes.json</code> + <code>app.json</code> 的 ' +
     '<code>artifact_scans</code> 合成：新增简历版本或图谱快照会自动出现在对应段落，不用改页面代码。</div>';
 

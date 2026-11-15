@@ -368,7 +368,7 @@ function renderNav(){
 
   const row = it => {
     const g = gOf(it.group), n = viewsOf(it).length, isHome = it.role === 'link';
-    // 侧栏写「段名」（岗位判断），不写段内主视图名（22 族匹配判断）
+    // 侧栏写「段名」（岗位判断），不写段内主视图名（岗位族匹配判断）
     const nm = isHome ? (it.label || it.id) : (g.label || it.label || it.id);
     const tip = (nm + (g.flow ? '\n' + g.flow : '')) +
       (n > 1 ? '\n' + n + ' 个视图，右侧切换' : '') + (it.note ? '\n' + it.note : '');

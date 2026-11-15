@@ -119,7 +119,10 @@ function render(){
       '<td><span class="oc '+esc(e.outcome)+'">'+esc(e.outcome)+'</span></td>'+
       '<td class="mut">'+esc([e.verdict, e.reason].filter(Boolean).join(' · ')||'—')+'</td>'+
       '<td class="mut">'+cond+'</td></tr>';
-  }).join('') : '<tr><td colspan="7" class="mut">当前筛选无事件。</td></tr>';
+  }).join('') : ('<tr><td colspan="7" class="mut">' +
+      (t.runs ? '当前筛选无事件。' :
+        '暂无投递事件：在 <code>runs/&lt;run_id&gt;/ledger.jsonl</code> 里每行写一条 append-only JSON，刷新后自动聚合到这里。') +
+      '</td></tr>');
   $('pageInfo').textContent = '第 '+(state.page+1)+' / '+pages+' 页 · 显示 '+slice.length+' / '+list.length+' 条';
   $('btnPrev').disabled = state.page<=0;
   $('btnNext').disabled = state.page>=pages-1;

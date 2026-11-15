@@ -10,10 +10,12 @@ workbuddy_out/*
 !workbuddy_out/README.md
 
 # 采集 / 投递 / 调研的运行时数据
-runs/
+runs/*
+!runs/demo/
 survey/
 unified_data.json*
 *.jsonl
+!runs/demo/ledger.jsonl
 *.csv
 
 # 个人产物：简历、报告、图谱快照

@@ -329,7 +329,7 @@ async function load(){
     state.data = j;
     $('sub').innerHTML = '只读 · 数据源 <code style="background:#232731;border-radius:4px;padding:1px 5px">'+
       esc(j.source)+'</code> · 更新于 '+esc(j.source_mtime||'—')+
-      ' · 22 族按匹配分排序，点任意行展开门槛分布与简历入口';
+      ' · 岗位族按匹配分排序，点任意行展开门槛分布与简历入口';
     renderStats(); renderChips(); renderTable();
   }catch(e){
     $('sub').textContent = '接口不可用';

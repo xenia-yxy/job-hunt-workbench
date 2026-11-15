@@ -768,7 +768,10 @@ document.getElementById("btnCsv").onclick = () => {
   const FN = ((window.__WB_CONFIG__ || {}).files || {}).csv_main || '台账.csv';
   download(FN, csvText(), "text/csv"); toast("CSV 已导出（当前筛选外的记录也包含）");
 };
-document.getElementById("btnBackup").onclick = () => { download("招聘跟踪备份.json", JSON.stringify(D, null, 1), "application/json", false); toast("JSON 备份已导出"); };
+document.getElementById("btnBackup").onclick = () => {
+  const FN = (((window.__WB_CONFIG__ || {}).files || {}).backup || 'backup.json').split('/').pop();
+  download(FN, JSON.stringify(D, null, 1), "application/json", false); toast("JSON 备份已导出");
+};
 document.getElementById("btnImport").onclick = () => document.getElementById("fileInput").click();
 document.getElementById("fileInput").onchange = e => {
   const f = e.target.files[0]; if(!f) return;
@@ -787,7 +790,7 @@ document.getElementById("fileInput").onchange = e => {
 };
 document.getElementById("btnCleanup").onclick = () => {
   if(!serverMode){ toast("按规则清理需要连上本地服务", true); return; }
-  ask("按规则清理台账？", "只保留「有沟通 + 有后续机会」的记录；已终止、只发过招呼、自动回执、方向偏离且无推进的会删除。清理前自动备份，删除清单写入 runs/cleanup/，可用「↺ 恢复上次备份」找回。", async () => {
+  ask("按规则清理台账？", "只保留「有沟通 + 有后续机会」的记录；已终止、只发过招呼、自动回执、方向偏离且无推进的会删除。清理前自动备份，删除清单写入清理输出目录，可用「↺ 恢复上次备份」找回。", async () => {
     try{
       const j = await (await fetch(API_BASE + "/api/cleanup", {method:"POST"})).json();
       if(!j.ok) throw new Error(j.err || "清理失败");
