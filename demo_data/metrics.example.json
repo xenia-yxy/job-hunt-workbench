@@ -1,0 +1,39 @@
+{
+  "schema": "metrics/v1",
+  "_note": "演示用岗位族匹配数据。真实数据由你自己的调研流程产出；字段含义见 docs/工作台设计.md 的 /api/job-families 一节。",
+  "order": ["前端开发", "后端开发", "AI应用"],
+  "total": 103,
+  "total_open": 66,
+  "families": {
+    "前端开发": {
+      "rank": 1, "band": "A", "match": 78,
+      "dims": { "thr": 82, "skill": 80, "growth": 72, "salary": 68 },
+      "n": 40, "open": 26, "open_rate": 0.65,
+      "block": 3, "check": 4, "suspicious": 0, "intern": 2, "excluded": 0,
+      "salary_open_median": 22.0, "salary_open_min": 18.0, "salary_open_max": 28.0,
+      "edu": { "本科": 32, "硕士": 6, "不限": 2 },
+      "exp": { "不限": 12, "1-3年": 20, "3-5年": 8 },
+      "form": { "全职": 38, "实习": 2 }
+    },
+    "后端开发": {
+      "rank": 2, "band": "B", "match": 64,
+      "dims": { "thr": 70, "skill": 62, "growth": 66, "salary": 74 },
+      "n": 35, "open": 19, "open_rate": 0.54,
+      "block": 7, "check": 5, "suspicious": 1, "intern": 1, "excluded": 0,
+      "salary_open_median": 26.0, "salary_open_min": 20.0, "salary_open_max": 32.0,
+      "edu": { "本科": 26, "硕士": 8, "不限": 1 },
+      "exp": { "不限": 8, "1-3年": 15, "3-5年": 12 },
+      "form": { "全职": 34, "实习": 1 }
+    },
+    "AI应用": {
+      "rank": 3, "band": "S", "match": 86,
+      "dims": { "thr": 74, "skill": 88, "growth": 92, "salary": 80 },
+      "n": 28, "open": 21, "open_rate": 0.75,
+      "block": 2, "check": 3, "suspicious": 0, "intern": 0, "excluded": 0,
+      "salary_open_median": 28.0, "salary_open_min": 22.0, "salary_open_max": 35.0,
+      "edu": { "本科": 18, "硕士": 9, "不限": 1 },
+      "exp": { "不限": 10, "1-3年": 12, "3-5年": 6 },
+      "form": { "全职": 27, "实习": 1 }
+    }
+  }
+}

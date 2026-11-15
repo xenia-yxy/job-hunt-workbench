@@ -21,6 +21,8 @@ unified_data.json*
 非开发岗方向分析_*.html
 跟踪结果页*.html
 atlas.html
+# 例外：demo_data 里的示例简历要跟着仓库走（它们是占位内容，不是个人数据）
+!demo_data/简历_*.html
 
 # 浏览器登录态与账号
 accounts.json
@@ -38,3 +40,5 @@ Thumbs.db
 .idea/
 .vscode/
 workbuddy_out/verify/hash-baseline.json
+# 由 app/build.js 生成的页面（数据内嵌，不入库）
+求职台账.html

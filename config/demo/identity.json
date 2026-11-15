@@ -1,0 +1,11 @@
+{
+  "schema": "identity/v1",
+  "_note": "演示身份（全部是编的占位值）。真实使用者把这里换成自己的事实源，或直接改 config/local/identity.json。",
+  "name": "示例同学",
+  "graduation": "2026",
+  "school": "示例大学",
+  "city": "示例城市",
+  "contact": "example@example.com",
+  "greeting": "您好，我对这个岗位很感兴趣，简历已附，期待沟通。",
+  "tech_stack": ["TypeScript", "Vue / React", "Node.js"]
+}

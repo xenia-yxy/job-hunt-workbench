@@ -57,6 +57,9 @@ TEMPLATE_GLOBS = [
     'templates/**/*', 'tools/*.example.py', 'tools/README.md',
     '工作台.html', '工作台-投递台账.html', 'workbench_readonly.js',
     '工作台-岗位判断.html', '工作台-文档.html', '工作台-首页.html',
+    # 服务端 / 概率引擎 / 清理：中性化后进模板轨（导出的路径映射见 tools/sync_template.py）
+    'server.js', 'prob.js', 'cleanup.py',
+    'app/*.js', 'app/*.html',
 ]
 # 通用兜底正则（不含任何实例数据）
 GENERIC_PATTERNS = [

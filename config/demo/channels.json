@@ -1,0 +1,48 @@
+{
+  "schema": "channels/v1",
+  "_note": "演示渠道：三条中性占位渠道，演示「渠道单一源」—— 改这里即改表头、标签颜色与 CSV 列顺序，不用动代码。",
+  "channels": [
+    {
+      "key": "campus",
+      "label": "校招",
+      "type": "campus",
+      "platform": null,
+      "csv_label": "校招",
+      "type_label": "校招",
+      "order": 1,
+      "enabled": true,
+      "account_hint": null,
+      "prob": { "add": 0, "why": "校园招聘流程更规范，回复快" }
+    },
+    {
+      "key": "platform_a",
+      "label": "平台A",
+      "type": "platform",
+      "platform": "platform_a",
+      "csv_label": "平台A",
+      "type_label": "社招",
+      "order": 2,
+      "enabled": true,
+      "account_hint": null,
+      "prob": { "add": 0, "why": "社招渠道，看岗位匹配度" }
+    },
+    {
+      "key": "platform_b",
+      "label": "平台B",
+      "type": "platform",
+      "platform": "platform_b",
+      "csv_label": "平台B",
+      "type_label": "社招",
+      "order": 3,
+      "enabled": true,
+      "account_hint": null,
+      "prob": { "add": -3, "why": "竞争更激烈，同岗位略降" }
+    }
+  ],
+  "csv_order": ["campus", "platform_a", "platform_b"],
+  "labels": {
+    "app_title": "求职台账",
+    "workbench_title": "求职工作台",
+    "csv_main_header": "来源"
+  }
+}

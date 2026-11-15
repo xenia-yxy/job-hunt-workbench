@@ -23,12 +23,30 @@
 | 文件 | 作用 |
 |---|---|
 | `channels.example.json` | **单一源**：渠道键、显示名、类型、CSV 列名与顺序、概率渠道加分。服务端、清理脚本、构建脚本、前端、概率引擎共用 |
-| `app.example.json` | 端口、CORS、输出文件名、localStorage 前缀、静态缓存头；`sources` 是只读数据源，`artifact_scans` 是段内产物的自动发现规则 |
+| `app.example.json` | 端口、CORS、**文件名**（`files`）、**页面路由**（`pages`）、**构建位置**（`build`）、**清理扫描来源**（`cleanup`）、localStorage 前缀、静态缓存头；`sources` 是只读数据源，`artifact_scans` 是段内产物的自动发现规则 |
 | `routes.example.json` | 工作台导航：`groups` 是首页 + 五段流程，`items` 每段一个 `role: "primary"` 主视图，其余产物写进它的 `variants`（全为项目根相对路径） |
 | `workbuddy.example.json` | 任务指令接口位：adapter / output_root / tasks_ref / result_dirs |
 | `identity.example.json` | 身份占位骨架；真实值只在 local 或由会话从事实源读取 |
 | `conditions.example.json` | 投递条件六块结构骨架，城市码为占位符 |
 | `resume_versions.example.json` | 简历版本索引骨架；只建索引，不移动或改写简历文件 |
+
+### app.json 的四个新分组（中性化后不再有默认文件名）
+
+| 分组 | 键 | 缺了会怎样 |
+|---|---|---|
+| `files` | `data` / `backup` / `csv_main` / `csv_campus` / `app_html` | **服务直接退出非 0**。不做默认值兜底——默认文件名猜错会写坏别的文件 |
+| `pages` | `workbench`（壳的文件名）、`workbench_paths`、`home_paths`（别名，旧书签继续可用） | 壳名默认 `工作台.html`，别名默认 `/workbench` 与 `/` |
+| `build` | `template_dir`、`template` | 缺省按 `build.js` 所在目录推断 |
+| `cleanup` | `out_dir`、`scan_dir`、`scan_files[]`、`detail_files[]` | 缺 `scan_dir` 时跳过回填、只做判定（不报错） |
+
+`cleanup.scan_files[]` 每条有 `role`：`jobs`（建岗位/薪资索引）、`jobs_alt`（备用索引，如第二个平台）、
+`delta`（会话列表快照）。**这是把「某平台的扫描产物」从句子里挪进配置的地方**——换平台只改这里。
+
+## config/demo/ —— 开箱可跑的演示配置
+
+`demo/app.json` + `demo/channels.json` + `demo/routes.json` + `demo/identity.json` + `demo/workbuddy.json`。
+复制到 `config/local/` 即可启动，配套数据是根目录的 `unified_data.example.json` 与 `demo_data/`。
+演示值全是编的（示例科技A、示例同学），可以直接跑，也可以照着改成自己的。
 
 ## channels 的驱动范围（P2 收敛完成）
 
@@ -36,8 +54,8 @@
 
 - `server.js`：`KEYS` / `emptyData` / `readData` 顶层键兜底 / CSV 渠道名 / CSV 行顺序（`csv_order`） / 校招渠道判定 / `/api/config`。
 - `cleanup.py`：遍历渠道集合与「声明键 ∪ 数据实际顶层键」兜底。
-- `runs/20261114-app/build.js`：注入到 `window.__WB_CONFIG__.channels`。
-- `runs/20261114-app/app.template.html`：筛选下拉、渠道标签、新增记录的类型与批次标签、CSV 导出。
+- 主应用的 `build.js`（`app.build.template_dir` 下）：注入到 `window.__WB_CONFIG__.channels`。
+- 主应用的 `app.template.html`：筛选下拉、渠道标签、新增记录的类型与批次标签、CSV 导出。
 - `prob.js`：渠道加分与文案（读每个渠道的 `prob` 段）。
 
 `type` 取 `campus | platform | custom`，替代所有针对具体渠道键的特判。

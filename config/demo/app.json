@@ -1,0 +1,54 @@
+{
+  "schema": "app/v1",
+  "_note": "演示配置：直接复制到 config/local/ 就能跑，指向本仓库自带的示例数据。真实使用时按自己情况改文件名与路径。",
+  "port": 8787,
+  "workbench_title": "求职工作台",
+  "cors": {
+    "origin": "*",
+    "methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "headers": "Content-Type"
+  },
+  "files": {
+    "data": "unified_data.json",
+    "backup": "unified_data.backup.json",
+    "csv_main": "台账.csv",
+    "csv_campus": "校招台账.csv",
+    "app_html": "求职台账.html",
+    "rules_fallback": "rules/local/job_family.json"
+  },
+  "pages": {
+    "workbench": "工作台.html",
+    "workbench_paths": ["/workbench"],
+    "home_paths": ["/", "/app", "/index.html"]
+  },
+  "build": {
+    "template_dir": "app",
+    "template": "app.template.html"
+  },
+  "cleanup": {
+    "out_dir": "runs/cleanup",
+    "scan_dir": null,
+    "scan_files": [],
+    "detail_files": []
+  },
+  "storage_namespace": "wb",
+  "api_base": "",
+  "static": { "cache_control": "no-store" },
+  "sources": {
+    "job_families": "demo_data/metrics.example.json",
+    "resume_versions": "demo_data/resume_versions.example.json",
+    "atlas_deep_link": "",
+    "doc_roots": ["docs"],
+    "doc_allow": ["工作台设计.md"]
+  },
+  "artifact_scans": [
+    {
+      "group": "resume",
+      "pattern": "demo_data/简历_*.html",
+      "label_from": "basename",
+      "strip_prefix": "简历_",
+      "sort": "name",
+      "note": "示例：丢一个 简历_<岗位>.html 进来就会出现在视图条"
+    }
+  ]
+}

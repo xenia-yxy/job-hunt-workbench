@@ -49,42 +49,66 @@
 
 ## 快速开始
 
-需要 Node 16+，无第三方依赖。
+需要 Node 16+ 和 Python 3.8+（清理脚本用），**无第三方依赖**。
+
+### 方式一：先跑自带 demo（不用改任何配置）
 
 ```bash
 git clone <this-repo> && cd job-hunt-workbench
 
-# 1. 复制配置骨架（4 份必需：app / routes / channels / identity）
-cd config && for f in *.example.json; do cp "$f" "local/${f%.example.json}.json"; done && cd ..
-
-# 2. 改 config/local/app.json 与 routes.json 里的 <占位符>
-#    最少只需：app.port、routes.groups、每段一个 role=primary 的 item.url
-
-# 3. 起服务
-node serve.example.js          # → http://127.0.0.1:8787/workbench
-node serve.example.js --port 9000
+mkdir -p config/local
+cp config/demo/*.json config/local/          # 演示配置：3 个渠道 + 4 条编造记录
+cp unified_data.example.json unified_data.json
+node app/build.js                            # 生成主应用页 求职台账.html
+node server.js                               # → http://127.0.0.1:8787/workbench
 ```
 
-`<占位符>` 没替换前，壳与导航可以正常打开，点进去会看到**兜底面板**（实际地址 + 重试 / 新标签 / 回首页）——
-这是刻意设计的降级，不是报错。先验证壳能跑，再逐段接上你自己的页面。
+打开后应该看到：侧栏 6 个入口、首页 KPI 有数、岗位判断页 3 个族带四维色条、
+简历段的视图条里有两份示例简历（由目录扫描自动发现）、跟踪段是能改数据的台账页。
+
+### 方式二：换成自己的数据
+
+```bash
+cp config/*.example.json config/local/       # 或用 demo 的改
+# 必改四处：
+#   config/local/app.json     files（数据/CSV/页面文件名）+ cleanup.scan_dir
+#   config/local/routes.json  五段入口指向你自己的页面
+#   config/local/channels.json 你的渠道（key 用于数据分组与表格列）
+#   config/local/identity.json 你自己的事实源
+node app/build.js && node server.js
+```
+
+`<占位符>` 没替换前，服务会直接退出并打印缺哪个键（**刻意不静默兜底**：默认文件名一旦猜错，
+就会把数据写到别处）。壳本身仍能打开，点进去会看到兜底面板（地址 + 重试 / 新标签 / 回首页）。
 
 ## 目录结构
 
 ```
+server.js                零依赖 HTTP 服务 + 主应用接口（数据读写 / CSV 重生成 / 清理触发）
+prob.js                  录取概率引擎（Node 与浏览器共用同一份）
+cleanup.py               台账清理：补全 → 分类 → 只留「有沟通 + 有后续机会」
+workbench_readonly.js    工作台只读接口（导航合成 / 台账聚合 / 族数据 / 文档）
+
 工作台.html              外壳：侧栏 / 视图条 / iframe / 任务抽屉 / 兜底面板
 工作台-首页.html          总览：关键数据 + 五段卡片（数字全来自接口，取不到显示「—」）
 工作台-岗位判断.html      岗位族匹配表：分档筛选、排序、展开明细、族简历直达
 工作台-投递台账.html      投递事件只读索引
 工作台-文档.html          通用 Markdown 阅读页（白名单路径 + 目录）
-workbench_readonly.js    只读接口实现（导航合成 / 台账聚合 / 族数据 / 文档 / 任务清单）
-serve.example.js         最小可跑服务（静态 + 只读接口，无主应用）
+
+app/app.template.html    主应用页模板（数据由 build.js 注入，模板本身零实例值）
+app/build.js             模板 + 数据 → 生成主应用页（对数据文件只读）
 
 config/*.example.json    配置骨架：app / routes / channels / conditions / identity /
                          resume_versions / workbuddy
+config/demo/*.json       开箱可跑的演示配置
 rules/*.example.json     规则骨架：岗位族分类 / 台账清理 / 概率词表
 templates/               账号、选择器、简历事实、四类任务指令模板
-tools/                   模板自检（敏感串扫描 + hash 基线）、台账索引导出、条件草案生成
-docs/工作台设计.md        详细设计文档：分层、接口契约、配置参考、交互与视觉规范
+demo_data/               演示用的族匹配数据、简历映射、两份占位简历
+unified_data.example.json 演示数据（4 条编造记录）
+tools/                   模板自检（敏感串 + hash 基线）、台账索引导出、条件草案生成
+docs/工作台设计.md        详细设计文档（PRD）
+serve.example.js         更小的服务：只有静态 + 只读接口，不含主应用（只想看壳时用）
+
 config/local/  rules/local/   你自己的配置（gitignored，永不提交）
 ```
 
@@ -140,19 +164,21 @@ config/local/  rules/local/   你自己的配置（gitignored，永不提交）
 
 ## 这个仓库有什么、没有什么
 
-**有**：工作台外壳与四个页面、只读接口的完整实现、最小可跑服务、配置与规则骨架、任务指令模板、自检工具、设计文档。
+**有**：完整可跑的一套——服务端 + 主应用页（增删改查、CSV 重生成、备份恢复）+ 概率引擎 +
+台账清理 + 工作台外壳与四个页面 + 只读接口 + 配置与规则骨架 + 任务指令模板 + 自检工具 +
+设计文档 + 演示数据。
 
-**没有**（暂未开源）：
+**没有**（属于具体平台或个人，不对外）：
 
 | 缺什么 | 为什么 |
 |---|---|
-| `server.js`（生产服务 + 主应用） | 里面还有工作区实例值（输出文件名、回退路径），中性化后单独发 |
-| 采集器 / 清理脚本 / 简历生成器 | 与具体平台 DOM、个人素材强绑定，属于实例侧 |
-| 岗位族图谱、简历 HTML、台账数据 | 个人数据，不进公开仓库 |
-| `templates/accounts.example.json` 之外的账号配置 | 登录态与账号 id 永不公开 |
+| 采集器 / 浏览器自动化脚本 | 与具体招聘站的 DOM、登录态、风控强绑定，写死了就没法给别人用 |
+| 简历生成器 | 依赖个人素材库，换人等于重写 |
+| 平台适配知识（选择器表、城市码、按钮文案） | 属于实测经验，且含站点结构细节 |
+| 真实数据 | 岗位样本、投递台账、沟通记录都是个人数据 |
 
-因此 clone 下来能跑通「壳 + 导航 + 只读接口 + 兜底」，但**看不到真实数据**。
-想看完整链路的效果，按下节自己接一两个页面即可。
+所以 clone 下来**能跑完整流程**（起服务、看工作台、改台账、导出 CSV、跑清理），
+只是数据是你自己的或 demo 的，采集那一段要你自己接（或手动录入）。
 
 ## 自检
 

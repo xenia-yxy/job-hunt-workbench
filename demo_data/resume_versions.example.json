@@ -1,0 +1,13 @@
+{
+  "schema": "resume-versions/v1",
+  "_note": "演示用：族名 → 简历文件映射。label 与 metrics 的族名精确匹配，对不上就不显示简历入口（不猜）。",
+  "groups": [
+    {
+      "dir": "demo_data",
+      "versions": [
+        { "id": "demo_front", "label": "前端开发", "file": "简历_前端开发.html" },
+        { "id": "demo_ai", "label": "AI应用", "file": "简历_AI应用.html" }
+      ]
+    }
+  ]
+}

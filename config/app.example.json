@@ -1,19 +1,42 @@
 {
   "schema": "app/v1",
-  "_note": "运行参数。默认端口沿用当前工作区，输出文件名为占位符，实例值放 config/local/app.json。",
+  "_note": "运行参数。文件名与路径一律写占位符，实例值放 config/local/app.json。",
   "port": 8787,
+  "workbench_title": "<WORKBENCH_TITLE>",
   "cors": {
     "origin": "*",
     "methods": "GET,POST,PUT,DELETE,OPTIONS",
     "headers": "Content-Type"
   },
   "files": {
+    "_note": "五个文件名全部必需（data/backup/csv_main/csv_campus/app_html）。缺任何一项服务直接退出——静默兜底会写错文件。",
     "data": "<DATA_FILE>.json",
     "backup": "<BACKUP_FILE>.json",
     "csv_main": "<MAIN_CSV>.csv",
     "csv_campus": "<CAMPUS_CSV>.csv",
     "app_html": "<APP_PAGE>.html",
     "rules_fallback": "<RULES_FILE>.json"
+  },
+  "pages": {
+    "_note": "页面路由。workbench 是工作台壳的文件名；两组 paths 是别名，让旧书签继续可用。",
+    "workbench": "<WORKBENCH_PAGE>.html",
+    "workbench_paths": ["/workbench"],
+    "home_paths": ["/", "/index.html"]
+  },
+  "build": {
+    "_note": "主应用页面的生成配置：模板目录（项目根相对）、模板文件名；输出文件名取 files.app_html。",
+    "template_dir": "<BUILD_DIR>",
+    "template": "<TEMPLATE_FILE>"
+  },
+  "cleanup": {
+    "_note": "台账清理的数据来源（项目根相对）。scan_files 的 role：jobs=建岗位/薪资索引，jobs_alt=备用岗位索引，delta=会话列表快照。整段缺失时跳过回填、只做判定，不报错。",
+    "out_dir": "runs/cleanup",
+    "scan_dir": "<SCAN_DIR>",
+    "scan_files": [
+      { "file": "<SCAN_FILE_1>.json", "tag": "<SOURCE_LABEL_1>", "role": "jobs" },
+      { "file": "<SCAN_FILE_2>.json", "tag": "<SOURCE_LABEL_2>", "role": "jobs_alt" }
+    ],
+    "detail_files": ["<DETAIL_FILE>.json"]
   },
   "storage_namespace": "wb",
   "api_base": "",

@@ -1,0 +1,35 @@
+{
+  "schema": "routes/v2",
+  "_note": "演示导航：首页 + 五段。research / resume 两段示例指向文档页——换成你自己的调研页与简历索引即可，侧栏条目数量不变。",
+  "groups": [
+    { "id": "home", "label": "首页", "order": 0, "kind": "link", "url": "工作台-首页.html" },
+    { "id": "judge", "label": "岗位判断", "index": "①", "order": 1,
+      "flow": "输入：简历与个人情况 ｜ 输出：岗位族匹配排序与方向建议 ｜ 下一步：挑候选族做市场调研" },
+    { "id": "research", "label": "市场调研", "index": "②", "order": 2,
+      "flow": "输入：候选岗位族 ｜ 输出：真实门槛、JD、匹配度 ｜ 下一步：按族挑简历版本" },
+    { "id": "resume", "label": "简历定制", "index": "③", "order": 3,
+      "flow": "输入：族画像与技术栈顺序 ｜ 输出：对应版本简历 ｜ 下一步：确认投递条件" },
+    { "id": "deliver", "label": "投递", "index": "④", "order": 4,
+      "flow": "输入：筛选条件 + 简历版本 ｜ 输出：投递台账 ｜ 下一步：跟踪沟通" },
+    { "id": "track", "label": "跟踪与回复", "index": "⑤", "order": 5,
+      "flow": "输入：沟通与进度 ｜ 输出：状态、面试准备、回复草稿 ｜ 下一步：复盘并调整条件" }
+  ],
+  "items": [
+    { "id": "judge_matrix", "label": "岗位族匹配判断", "group": "judge", "role": "primary",
+      "url": "工作台-岗位判断.html", "order": 0,
+      "note": "读 metrics + resume_versions，分档筛选 / 排序 / 展开明细" },
+    { "id": "research_doc", "label": "调研示例", "group": "research", "role": "primary",
+      "url": "工作台-文档.html?src=工作台设计.md", "order": 0,
+      "note": "示例：把你的图谱页（如 survey/*/atlas.html）填到这里" },
+    { "id": "resume_doc", "label": "简历示例", "group": "resume", "role": "primary",
+      "url": "工作台-文档.html?src=工作台设计.md", "order": 0,
+      "note": "示例：把简历索引导航页填到这里；简历文件由 artifact_scans 自动收" },
+    { "id": "ledger", "label": "投递台账", "group": "deliver", "role": "primary",
+      "url": "工作台-投递台账.html", "order": 0,
+      "note": "append-only 事件索引" },
+    { "id": "track_app", "label": "求职台账", "group": "track", "role": "primary",
+      "url": "求职台账.html", "order": 0,
+      "note": "唯一可写页面：增删改记录会写回数据文件并重生成 CSV",
+      "writable": true, "badge": "可写", "badge_kind": "write" }
+  ]
+}
