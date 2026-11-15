@@ -1,0 +1,36 @@
+{
+  "schema": "channels/v1",
+  "_note": "渠道单一源。真实实例值放 config/local/channels.json（gitignored）；prob 段供概率引擎读取，新增渠道只需改这一处。",
+  "channels": [
+    {
+      "key": "campus",
+      "label": "<CHANNEL_1_LABEL>",
+      "type": "campus",
+      "platform": null,
+      "csv_label": "<CHANNEL_1_LABEL>",
+      "type_label": "<CHANNEL_1_TYPE>",
+      "order": 1,
+      "enabled": true,
+      "account_hint": null,
+      "prob": { "add": 0, "why": "<PROB_CHANNEL_1_NOTE>" }
+    },
+    {
+      "key": "platform_a",
+      "label": "<CHANNEL_2_LABEL>",
+      "type": "platform",
+      "platform": "<PLATFORM_ID>",
+      "csv_label": "<CHANNEL_2_LABEL>",
+      "type_label": "<CHANNEL_2_TYPE>",
+      "order": 2,
+      "enabled": true,
+      "account_hint": null,
+      "prob": { "add": 0, "why": "<PROB_CHANNEL_2_NOTE>" }
+    }
+  ],
+  "csv_order": [],
+  "labels": {
+    "app_title": "<APP_TITLE>",
+    "workbench_title": "<WORKBENCH_TITLE>",
+    "csv_main_header": "<CSV_SOURCE_HEADER>"
+  }
+}

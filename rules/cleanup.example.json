@@ -1,0 +1,33 @@
+{
+  "schema": "cleanup-rules/v1",
+  "_status": "example-neutral",
+  "_note": "通用模板骨架：结构完整、零敏感串。工作区实例规则放 rules/local/cleanup.json（gitignored）。岗位族 preferred / low 来自岗位分类规则文件。",
+  "keep_threshold": 38,
+  "end_status": ["<END_STATUS_1>", "<END_STATUS_2>"],
+  "active_stage": ["<ACTIVE_STAGE_1>", "<ACTIVE_STAGE_2>"],
+  "no_reply_notes": ["<NO_REPLY_NOTE_1>"],
+  "substantive_notes": ["<SUBSTANTIVE_NOTE_1>"],
+  "no_reply_levels": ["sent", "ack"],
+  "hr_wait_keywords": ["<HR_WAIT_1>"],
+  "substantive_keyword": "<SUBSTANTIVE_KEYWORD>",
+  "expired_keyword": "已过期",
+  "terminated_flag": "已终止",
+  "reject_level": "reject",
+  "family_fields": { "preferred": "preferred", "low": "low" },
+  "weights": {
+    "hr_wait": 25,
+    "in_process": 18,
+    "substantive": 8,
+    "multi_msg": 8,
+    "preferred": 10,
+    "low": -14
+  },
+  "multi_msg_min": 3,
+  "texts": {
+    "end": "明确结束/拒绝",
+    "expired": "邀请/面谈已过期",
+    "no_reply": "只发招呼 / 自动回执，无对方回应",
+    "keep": "机会分 {{score}}（有沟通 / 有下一步）",
+    "drop": "机会分 {{score}}（只发招呼 / 无后续 / 方向偏离）"
+  }
+}

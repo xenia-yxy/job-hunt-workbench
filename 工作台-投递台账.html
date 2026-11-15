@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>投递台账 · 只读</title>
+<style>
+:root{--bg:#14161a;--panel:#1c1f26;--panel2:#232731;--line:#2e333e;--ink:#e8ebf1;--mut:#8b93a3;--accent:#7aa8ff;--ok:#5fd39a;--warn:#f0be5f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;padding:22px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:19px;margin:0 0 6px}
+.sub{color:var(--mut);font-size:12px;margin-bottom:16px}
+.tag{display:inline-block;border:1px solid var(--warn);color:var(--warn);border-radius:20px;padding:2px 9px;font-size:11px;margin-left:8px;vertical-align:middle}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px;margin-bottom:12px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.stat{flex:1;min-width:120px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.stat b{display:block;font-size:21px;line-height:1.2;color:var(--accent)}
+.stat span{font-size:11px;color:var(--mut)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,input{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:6px 9px;font:12px inherit;font-family:inherit}
+input[type=text]{min-width:190px}
+button{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:6px 10px;font:12px inherit;font-family:inherit;cursor:pointer}
+button:hover{border-color:var(--accent)}
+label.ck{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:5px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:500;white-space:nowrap;background:var(--panel2)}
+td.mut,span.mut{color:var(--mut)}
+tr:hover td{background:#20242c}
+.oc{display:inline-block;border-radius:5px;padding:1px 6px;font-size:11px;border:1px solid var(--line)}
+.oc.delivered{color:var(--ok);border-color:var(--ok)}
+.oc.skipped{color:var(--mut)}
+.oc.dry_run,.oc.blocked_by_quota{color:var(--warn);border-color:var(--warn)}
+.pager{display:flex;gap:9px;align-items:center;margin-top:11px;font-size:12px;color:var(--mut)}
+a{color:var(--accent);text-decoration:none}
+code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-size:11px}
+ul{color:var(--mut);font-size:12px;padding-left:20px;margin:6px 0}
+.scroll{overflow-x:auto}
+</style></head>
+<body><div class="wrap">
+  <h1>投递台账 <span class="tag">只读</span></h1>
+  <p class="sub">历史 run 目录下 append-only 台账的运行时内存聚合 · 零落盘 · 不写入跟踪主表 · 不触发任何投递动作。</p>
+  <div class="box" id="status">正在读取索引接口…</div>
+  <div class="stats" id="stats"></div>
+  <div class="box">
+    <div class="filters">
+      <select id="fRun"><option value="">全部批次</option></select>
+      <select id="fOutcome"><option value="">全部结论</option></select>
+      <label class="ck"><input type="checkbox" id="fDelivered"> 仅已投递</label>
+      <input type="text" id="fQ" placeholder="公司 / 岗位 / job_id / 依据">
+      <select id="fPer"><option value="50">每页 50</option><option value="100">每页 100</option><option value="200">每页 200</option></select>
+      <button id="btnReset">重置</button>
+    </div>
+  </div>
+  <div class="box scroll">
+    <table><thead><tr>
+      <th>时间</th><th>批次</th><th>公司</th><th>岗位</th><th>结论</th><th>依据 / 判定</th><th>条件快照</th>
+    </tr></thead><tbody id="rows"></tbody></table>
+    <div class="pager"><button id="btnPrev">← 上一页</button><span id="pageInfo">—</span><button id="btnNext">下一页 →</button></div>
+  </div>
+  <div class="box">
+    <b>设计口径</b>
+    <ul>
+      <li>数据源：<code>runs/*/ledger.jsonl</code>，坏行跳过；稳定 ID = 批次 + 行号 + 去重键（<code>job_id</code> 优先，退回「公司|标题」）。</li>
+      <li>结论口径：<code>outcome</code> 或 <code>delivery.outcome</code>；只有 <code>delivered</code> 计入已投递，与 <code>jkit/store.py</code> 一致。</li>
+      <li>条件快照只存路径字符串：<b>不解析、不回填、不统一两套 schema</b>；旧格式仅展示原文路径。</li>
+      <li>跟踪主表仍按既有铁律只保留「有沟通、有后续机会」的记录；海投流水不灌进主表，通过可选 <code>source_refs[]</code> 引用式关联。</li>
+      <li>历史台账与快照一律不回改；条件变更必须新建批次与 <code>condition_id</code>。</li>
+    </ul>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const state = {idx:null, page:0, per:50};
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function initFilters(){
+  const idx = state.idx, runs = idx.runs || [], t = idx.totals || {};
+  $('fRun').innerHTML = '<option value="">全部批次（'+runs.length+'）</option>' +
+    runs.slice().sort((a,b)=>b.run_id.localeCompare(a.run_id))
+      .map(r=>'<option value="'+esc(r.run_id)+'">'+esc(r.run_id)+' · '+r.lines+' 行 / '+r.delivered+' 投递</option>').join('');
+  const ocs = Object.keys(t.outcomes||{}).sort();
+  $('fOutcome').innerHTML = '<option value="">全部结论（'+ocs.length+' 类）</option>' +
+    ocs.map(o=>'<option value="'+esc(o)+'">'+esc(o)+' · '+t.outcomes[o]+'</option>').join('');
+}
+
+function filtered(){
+  const ev = (state.idx.events||[]), run=$('fRun').value, oc=$('fOutcome').value,
+        only=$('fDelivered').checked, q=$('fQ').value.trim().toLowerCase();
+  return ev.filter(e => {
+    if(run && e.run_id !== run) return false;
+    if(oc && e.outcome !== oc) return false;
+    if(only && !e.delivered) return false;
+    if(q && (e.company+' '+e.title+' '+e.job_id+' '+e.reason+' '+e.dedupe_key).toLowerCase().indexOf(q)<0) return false;
+    return true;
+  });
+}
+
+function render(){
+  const idx = state.idx, t = idx.totals||{}, list = filtered();
+  const pages = Math.max(1, Math.ceil(list.length/state.per));
+  if(state.page >= pages) state.page = pages-1;
+  if(state.page < 0) state.page = 0;
+  const slice = list.slice(state.page*state.per, (state.page+1)*state.per);
+  $('stats').innerHTML = [
+    ['批次', t.runs||0], ['台账行', t.lines||0], ['已投递', t.delivered||0],
+    ['当前筛选', list.length], ['坏行', t.bad_lines||0]
+  ].map(x=>'<div class="stat"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>').join('');
+  const runMap = {};
+  (idx.runs||[]).forEach(r=>{ runMap[r.run_id]=r; });
+  $('rows').innerHTML = slice.length ? slice.map(e => {
+    const r = runMap[e.run_id] || {};
+    const cref = r.condition_ref;
+    const cond = cref ? (r.condition_exists
+      ? '<a href="/'+esc(cref.split('/').map(encodeURIComponent).join('/'))+'" target="_blank" rel="noopener">原文路径</a> <span class="mut">· '+(r.condition_note||'')+'</span>'
+      : '<span class="mut">无快照</span>') : '—';
+    return '<tr><td class="mut">'+esc((e.at||'').slice(0,16).replace('T',' '))+'</td>'+
+      '<td class="mut">'+esc(e.run_id)+':'+e.line_no+'</td>'+
+      '<td>'+esc(e.company||'—')+'</td><td>'+esc(e.title||'—')+'</td>'+
+      '<td><span class="oc '+esc(e.outcome)+'">'+esc(e.outcome)+'</span></td>'+
+      '<td class="mut">'+esc([e.verdict, e.reason].filter(Boolean).join(' · ')||'—')+'</td>'+
+      '<td class="mut">'+cond+'</td></tr>';
+  }).join('') : '<tr><td colspan="7" class="mut">当前筛选无事件。</td></tr>';
+  $('pageInfo').textContent = '第 '+(state.page+1)+' / '+pages+' 页 · 显示 '+slice.length+' / '+list.length+' 条';
+  $('btnPrev').disabled = state.page<=0;
+  $('btnNext').disabled = state.page>=pages-1;
+}
+
+async function load(){
+  try{
+    const r = await fetch('/api/ledger-index?t='+Date.now(), {cache:'no-store'});
+    if(!r.ok) throw new Error('http '+r.status);
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.err||'bad payload');
+    state.idx = j;
+    $('status').innerHTML = '<b>索引已就绪</b> <span class="mut">· 只读内存聚合</span><br>'+
+      '<span class="mut">来源指纹 <code>'+esc(j.source_hash||'')+'</code> · 最新台账时间 '+esc(j.source_mtime_max||'—')+'</span>';
+    initFilters(); render();
+  }catch(e){
+    $('status').innerHTML = '<b>索引接口不可用</b><br><span class="mut">'+esc(e.message||e)+
+      '。本页不读取任何历史文件，也不会产生写操作。</span>';
+  }
+}
+
+['fRun','fOutcome','fDelivered','fQ','fPer'].forEach(id => {
+  $(id).addEventListener(id==='fQ'?'input':'change', () => {
+    if(id==='fPer') state.per = parseInt($('fPer').value,10)||50;
+    state.page = 0; render();
+  });
+});
+$('btnReset').onclick = () => {
+  $('fRun').value=''; $('fOutcome').value=''; $('fDelivered').checked=false; $('fQ').value='';
+  $('fPer').value='50'; state.per=50; state.page=0; render();
+};
+$('btnPrev').onclick = () => { state.page--; render(); };
+$('btnNext').onclick = () => { state.page++; render(); };
+load();
+</script>
+</body></html>

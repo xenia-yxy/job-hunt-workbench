@@ -1,0 +1,29 @@
+{
+  "schema": "conditions/v1",
+  "_note": "投递条件骨架（六块结构）。城市码为占位符，缺失时必须显式报错，绝不静默继承默认值。",
+  "id": "<CONDITION_ID>",
+  "queries": ["<QUERY_1>", "<QUERY_2>"],
+  "city": "<YOUR_CITY>",
+  "city_code": {
+    "<PLATFORM_A>": "<PLATFORM_A_CITY_CODE>",
+    "<PLATFORM_B>": "<PLATFORM_B_CITY_CODE>"
+  },
+  "filters": {
+    "<PLATFORM_A>": { "<FILTER_LABEL>": "<FILTER_VALUE>" }
+  },
+  "profile": {
+    "education": "<YOUR_EDUCATION>",
+    "exp_years": 0,
+    "exp_ceiling_years": 3,
+    "graduation": "<YOUR_GRADUATION_YEAR>",
+    "salary_floor": null,
+    "allow_intern": false,
+    "tech_stack": ["<TECH_1>"]
+  },
+  "deliver": {
+    "min_grade": "B",
+    "max": null,
+    "daily_limit": 100,
+    "budget_min": 40
+  }
+}

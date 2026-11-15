@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>岗位族匹配判断</title>
+<style>
+:root{
+  --bg:#14161a;--panel:#1c1f26;--panel2:#232731;--line:#2e333e;
+  --ink:#e8ebf1;--mut:#8b93a3;--accent:#7aa8ff;
+  --s:#f5c451;--a:#5fd39a;--b:#7aa8ff;--c:#9aa4b5;--d:#f07a7a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:13px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+.wrap{max-width:none;margin:0 auto;padding:22px 18px 60px}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+h1{margin:0;font-size:19px;letter-spacing:.3px}
+.sub{margin:6px 0 0;font-size:11.5px;color:var(--mut);line-height:1.7}
+.ro{border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--mut);white-space:nowrap}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.card .kv{font-size:21px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
+.card .kl{font-size:11px;color:var(--mut);margin-top:3px}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--mut);border-radius:20px;
+  padding:4px 10px;font-size:11.5px;cursor:pointer;font-family:inherit;line-height:1.5}
+.chip:hover{border-color:#3d4453;color:var(--ink)}
+.chip.on{background:rgba(122,168,255,.16);border-color:rgba(122,168,255,.5);color:#cfe0ff}
+.chip b{font-weight:600;opacity:.85;margin-left:4px}
+input#q,select{border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  border-radius:8px;padding:6px 10px;font-size:12px;font-family:inherit;outline:none}
+input#q{width:180px}
+input#q:focus,select:focus{border-color:rgba(122,168,255,.5)}
+.ck{font-size:11.5px;color:var(--mut);display:flex;align-items:center;gap:5px;cursor:pointer}
+.ck input{accent-color:#7aa8ff}
+
+.tblwrap{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow-x:auto}
+/* 固定列宽：iframe 内容区通常 900–1000px，让 8 列在窄容器里也完整可见，不靠横向滚动 */
+table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:0}
+th:nth-child(1){width:42px}
+th:nth-child(2){width:auto}
+th:nth-child(3){width:64px}
+th:nth-child(4){width:142px}
+th:nth-child(5){width:108px}
+th:nth-child(6){width:124px}
+th:nth-child(7){width:80px}
+th:nth-child(8){width:76px}
+th,td{padding:8px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11px;color:var(--mut);font-weight:500;letter-spacing:.3px;white-space:nowrap;
+  background:var(--panel2);position:sticky;top:0;z-index:2}
+tbody tr.row{cursor:pointer}
+tbody tr.row:hover{background:rgba(255,255,255,.025)}
+tbody tr.row.open{background:rgba(122,168,255,.06)}
+.rank{color:var(--mut);font-variant-numeric:tabular-nums;font-size:11.5px;width:38px}
+.fam{font-weight:600;white-space:normal;word-break:break-word;line-height:1.45}
+.bd{display:inline-block;border-radius:5px;padding:1px 7px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.bd-S{background:rgba(245,196,81,.16);color:var(--s)}
+.bd-A{background:rgba(95,211,154,.15);color:var(--a)}
+.bd-B{background:rgba(122,168,255,.15);color:var(--b)}
+.bd-C{background:rgba(154,164,181,.15);color:var(--c)}
+.bd-D{background:rgba(240,122,122,.14);color:var(--d)}
+
+.mcell{display:flex;align-items:center;gap:6px;min-width:0}
+.mv{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;min-width:34px}
+.mcell i{flex:1;height:4px;background:var(--panel2);border-radius:2px;overflow:hidden;display:block}
+.mcell u{display:block;height:100%;background:var(--accent);text-decoration:none}
+
+/* 四维：四个小信号灯，颜色直接标出短板（低红 / 中黄 / 高绿），悬停看精确分值 */
+.d4{display:flex;gap:5px}
+.dm{font-size:9.5px;color:#7b8494;display:flex;flex-direction:column;gap:3px;width:17px;
+  align-items:center;cursor:help;line-height:1.2}
+.dm i{display:block;width:100%;height:4px;background:rgba(255,255,255,.07);border-radius:2px;
+  overflow:hidden}
+.dm u{display:block;height:100%;border-radius:2px;text-decoration:none;background:#6f7f96;
+  transition:width .2s}
+.dm.lo u{background:#d9695a}
+.dm.mid u{background:#c39a4e}
+.dm.hi u{background:#4fbd8c}
+.dm:hover{color:#cdd6e2}
+
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.mut{color:var(--mut)}
+.mini{font-size:11px}
+a.lk{color:#8fbcfb;text-decoration:none;border-bottom:1px dashed rgba(143,188,251,.35)}
+a.lk:hover{color:#b7d5ff}
+
+tr.det>td{background:#171b21;padding:0}
+.detbox{padding:13px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.detcol h4{margin:0 0 6px;font-size:11px;color:var(--mut);font-weight:600;letter-spacing:.3px}
+.detcol .lst{font-size:11.5px;line-height:1.9;color:#c6cdd9}
+.detcol .lst span{color:var(--mut);margin-right:5px}
+.detacts{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.btn{display:inline-block;border:1px solid rgba(122,168,255,.4);color:#a8c8ff;border-radius:7px;
+  padding:4px 9px;font-size:11px;text-decoration:none;background:transparent}
+.btn:hover{background:rgba(122,168,255,.12)}
+.btn.ghost{border-color:var(--line);color:var(--mut)}
+
+.empty{padding:28px;text-align:center;color:var(--mut);font-size:12.5px}
+.err{margin:16px 0;padding:14px 16px;border:1px solid rgba(240,122,122,.35);background:rgba(240,122,122,.07);
+  border-radius:10px;font-size:12.5px;line-height:1.8}
+.err b{color:#f4a3a3}
+.foot{margin:14px 0 0;font-size:11px;color:var(--mut);line-height:1.9}
+.foot code{background:var(--panel2);border-radius:4px;padding:1px 5px;font-size:10.5px}
+/* 更窄的容器（分栏/窄窗口）下先隐藏四维与薪资，精确值在展开行里仍可看 */
+@media(max-width:940px){
+  .wrap{padding:16px 12px 50px}
+  .col-d4,.col-sal{display:none}
+}
+</style></head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>岗位族匹配判断</h1>
+      <p class="sub" id="sub">正在读取匹配数据…</p>
+    </div>
+    <div class="ro">只读 · 不改动任何数据</div>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <div class="bar">
+    <div class="chips" id="chips"></div>
+    <input id="q" type="search" placeholder="搜索岗位族…">
+    <select id="sort">
+      <option value="rank">按名次</option>
+      <option value="match">按匹配分</option>
+      <option value="salary">按薪资中位</option>
+      <option value="open">按在招数</option>
+      <option value="block">按门槛超限少</option>
+    </select>
+    <label class="ck"><input type="checkbox" id="fBlock"> 只看门槛超限 ≤3</label>
+  </div>
+
+  <div class="tblwrap">
+    <table>
+      <thead><tr>
+        <th class="rank">#</th><th>岗位族</th><th>分档</th><th>匹配分</th>
+        <th class="col-d4" title="门槛可达 / 技能适配 / 成长空间 / 薪资水平（绿≥75，黄≥50，红<50）">四维</th>
+        <th>在招 / 样本</th><th class="col-sal">薪资中位</th><th>简历</th>
+      </tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden>没有符合筛选条件的岗位族。</div>
+  </div>
+
+  <p class="foot">
+    四维（门槛/技能/成长/薪资）依次为表中的四列信号条：绿≥75、黄≥50、红&lt;50，悬停可看精确分值。
+    口径与调研快照一致：匹配分 = 门槛可达率 35% + 技能适配 30% + 成长空间 20% + 薪资水平 15%；
+    分档 <code>S ≥72</code> / <code>A ≥62</code> / <code>B ≥52</code> / <code>C ≥42</code> / <code>D &lt;42</code>。
+    「门槛超限」= 该族样本中经验要求超出可投档（3-5 年及以上，或标题限届别）的条数。
+    HR 活跃度与回复率不进入匹配分。
+  </p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const BAND_TXT = {S:'S 强推', A:'A 推荐', B:'B 可投', C:'C 兜底', D:'D 不建议'};
+const state = {data:null, bands:new Set(), q:'', sort:'rank', onlyBlock:false};
+
+// 行展开：内联绑定，任何行内点击都能展开（链接触发导航时不拦）
+function wbToggle(tr, ev){
+  if(ev && ev.target && ev.target.closest && ev.target.closest('a')) return;
+  const det = tr.nextElementSibling;
+  if(!det || !det.classList.contains('det')) return;
+  const willShow = det.hidden;
+  det.hidden = !willShow;
+  tr.classList.toggle('open', willShow);
+  tr.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+}
+function wbKey(tr, ev){
+  if(ev.key !== 'Enter' && ev.key !== ' ') return;
+  ev.preventDefault();
+  wbToggle(tr, null);
+}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function num(v, d){ return (v==null||v==='') ? (d==null?'—':d) : v; }
+function topN(obj, n){
+  return Object.keys(obj||{})
+    .map(k => [k, obj[k]])
+    .sort((a,b) => b[1]-a[1])
+    .slice(0, n);
+}
+
+function renderStats(){
+  const d = state.data; if(!d) return;
+  const f = d.families || [];
+  const best = f.reduce((m,x) => (x.match!=null && x.match>m) ? x.match : m, 0);
+  const sCount = (d.bands||{}).S || 0;
+  const cards = [
+    [num(d.total), '样本数（全部渠道）'],
+    [num(d.total_open), '可投样本数'],
+    [best ? best.toFixed(1) : '—', '最高匹配分'],
+    [sCount + ' / ' + f.length, 'S 档 / 岗位族']
+  ];
+  $('stats').innerHTML = cards.map(([v,k]) =>
+    '<div class="card"><div class="kv">'+esc(v)+'</div><div class="kl">'+esc(k)+'</div></div>').join('');
+}
+
+function renderChips(){
+  const d = state.data; if(!d) return;
+  const bands = d.bands || {};
+  const order = ['S','A','B','C','D'];
+  let html = '<button class="chip'+(state.bands.size?'':' on')+'" data-band="">全部<b>'+(d.families||[]).length+'</b></button>';
+  order.forEach(b => {
+    if(!bands[b]) return;
+    html += '<button class="chip'+(state.bands.has(b)?' on':'')+'" data-band="'+b+'">'+
+      esc(BAND_TXT[b]||b)+'<b>'+bands[b]+'</b></button>';
+  });
+  $('chips').innerHTML = html;
+  $('chips').querySelectorAll('.chip').forEach(btn => {
+    btn.onclick = () => {
+      const b = btn.getAttribute('data-band');
+      if(!b) state.bands.clear();
+      else if(state.bands.has(b)) state.bands.delete(b);
+      else state.bands.add(b);
+      renderChips(); renderTable();
+    };
+  });
+}
+
+function dimsHtml(dims){
+  const items = [['thr','门','门槛可达'],['skill','技','技能适配'],
+                 ['growth','成','成长空间'],['salary','薪','薪资水平']];
+  return '<div class="d4">' + items.map(([k,t,full]) => {
+    const v = Math.max(0, Math.min(100, Number((dims||{})[k]||0)));
+    const lv = v >= 75 ? 'hi' : (v >= 50 ? 'mid' : 'lo');
+    return '<span class="dm '+lv+'" title="'+full+' '+v+' / 100">'+t+
+      '<i><u style="width:'+v+'%"></u></i></span>';
+  }).join('') + '</div>';
+}
+
+function view(){
+  const d = state.data; if(!d) return [];
+  let list = (d.families||[]).slice();
+  if(state.bands.size) list = list.filter(x => state.bands.has(x.band));
+  if(state.q){
+    const q = state.q.toLowerCase();
+    list = list.filter(x => String(x.name).toLowerCase().indexOf(q) >= 0);
+  }
+  if(state.onlyBlock) list = list.filter(x => (x.block||0) <= 3);
+  const key = state.sort;
+  if(key === 'rank') list.sort((a,b) => (a.rank==null?999:a.rank) - (b.rank==null?999:b.rank));
+  if(key === 'match') list.sort((a,b) => (b.match||0) - (a.match||0));
+  if(key === 'salary') list.sort((a,b) => (b.salary_open_median||0) - (a.salary_open_median||0));
+  if(key === 'open') list.sort((a,b) => (b.open||0) - (a.open||0));
+  if(key === 'block') list.sort((a,b) => (a.block||0) - (b.block||0));
+  return list;
+}
+
+function renderTable(){
+  const list = view();
+  const tb = $('tb');
+  $('empty').hidden = list.length > 0;
+  if(!list.length){ tb.innerHTML = ''; return; }
+  tb.innerHTML = list.map(x => {
+    const m = x.match==null ? 0 : Math.max(0, Math.min(100, x.match));
+    const res = x.resume;
+    const row =
+      '<tr class="row" tabindex="0" aria-expanded="false" data-name="'+esc(x.name)+'" '+
+        'onclick="wbToggle(this,event)" onkeydown="wbKey(this,event)">'+
+        '<td class="rank">'+esc(num(x.rank))+'</td>'+
+        '<td class="fam">'+esc(x.name)+'</td>'+
+        '<td><span class="bd bd-'+esc(x.band||'C')+'">'+esc(BAND_TXT[x.band]||x.band||'—')+'</span></td>'+
+        '<td><div class="mcell"><span class="mv">'+esc(x.match==null?'—':x.match.toFixed(1))+'</span><i><u style="width:'+m+'%"></u></i></div></td>'+
+        '<td class="col-d4">'+dimsHtml(x.dims)+'</td>'+
+        '<td class="num">'+esc(x.open)+' <span class="mut mini">/ '+esc(x.n)+'</span>'+
+          (x.open_rate!=null?' <span class="mut mini">('+esc(x.open_rate)+'%)</span>':'')+'</td>'+
+        '<td class="num col-sal">'+esc(x.salary_open_median==null?'—':x.salary_open_median+'K')+'</td>'+
+        '<td>'+(res ? '<a class="lk" href="'+esc(res.url)+'" target="_blank" rel="noopener" title="'+esc(res.label||'')+'">简历 ↗</a>' : '<span class="mut">—</span>')+'</td>'+
+      '</tr>';
+
+    const edu = topN(x.edu, 4).map(([k,v]) => '<div><span>'+esc(k)+'</span>'+esc(v)+'</div>').join('') || '<div class="mut">无</div>';
+    const exp = topN(x.exp, 5).map(([k,v]) => '<div><span>'+esc(k)+'</span>'+esc(v)+'</div>').join('') || '<div class="mut">无</div>';
+    const form = topN(x.form, 3).map(([k,v]) => '<div><span>'+esc(k)+'</span>'+esc(v)+'</div>').join('') || '<div class="mut">无</div>';
+
+    const det =
+      '<tr class="det" hidden><td colspan="8"><div class="detbox">'+
+        '<div class="detcol"><h4>学历分布</h4><div class="lst">'+edu+'</div></div>'+
+        '<div class="detcol"><h4>经验分布</h4><div class="lst">'+exp+'</div></div>'+
+        '<div class="detcol"><h4>招聘形式</h4><div class="lst">'+form+'</div>'+
+          '<div class="lst" style="margin-top:6px">'+
+            '<div><span>门槛超限</span>'+esc(x.block)+'</div>'+
+            '<div><span>实习/日结</span>'+esc(x.intern)+'</div>'+
+            '<div><span>可疑</span>'+esc(x.suspicious)+'</div>'+
+            '<div><span>待确认</span>'+esc(x.check)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="detcol"><h4>四维得分</h4><div class="lst">'+
+          '<div><span>门槛可达</span>'+esc(num((x.dims||{}).thr))+'</div>'+
+          '<div><span>技能适配</span>'+esc(num((x.dims||{}).skill))+'</div>'+
+          '<div><span>成长空间</span>'+esc(num((x.dims||{}).growth))+'</div>'+
+          '<div><span>薪资水平</span>'+esc(num((x.dims||{}).salary))+'</div>'+
+          '<div style="margin-top:6px"><span>薪资区间</span>'+
+            esc(num(x.salary_open_min))+'–'+esc(num(x.salary_open_max))+'K</div>'+
+          '<div><span>全样本中位</span>'+esc(num(x.salary_all_median))+'K</div>'+
+        '</div></div>'+
+        '<div class="detcol"><h4>下一步</h4>'+
+          '<div class="detacts">'+
+            (res ? '<a class="btn" href="'+esc(res.url)+'" target="_blank" rel="noopener">打开族定制简历 ↗</a>' : '')+
+            (x.atlas_url ? '<a class="btn ghost" href="'+esc(x.atlas_url)+'" target="_blank" rel="noopener">图谱该族详情 ↗</a>' : '')+
+          '</div>'+
+          '<div class="lst mut" style="margin-top:8px">简历与图谱均为只读打开，不在本页改动内容。</div>'+
+        '</div>'+
+      '</div></td></tr>';
+    return row + det;
+  }).join('');
+
+  // 行展开由 wbToggle 内联绑定，这里只保留视觉状态同步
+}
+
+async function load(){
+  try{
+    const r = await fetch('/api/job-families?t=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    if(!j.ok){
+      $('sub').textContent = '数据源不可用';
+      $('stats').innerHTML = '';
+      $('tb').innerHTML = '';
+      document.querySelector('.tblwrap').innerHTML =
+        '<div class="err"><b>无法读取岗位族数据（'+esc(j.code||'ERROR')+'）</b><br>'+esc(j.hint||'')+
+        '<br><span class="mut">检查 config/local/app.json 的 sources.job_families 与 sources.resume_versions。</span></div>';
+      return;
+    }
+    state.data = j;
+    $('sub').innerHTML = '只读 · 数据源 <code style="background:#232731;border-radius:4px;padding:1px 5px">'+
+      esc(j.source)+'</code> · 更新于 '+esc(j.source_mtime||'—')+
+      ' · 22 族按匹配分排序，点任意行展开门槛分布与简历入口';
+    renderStats(); renderChips(); renderTable();
+  }catch(e){
+    $('sub').textContent = '接口不可用';
+    $('tb').innerHTML = '';
+    document.querySelector('.tblwrap').innerHTML =
+      '<div class="err"><b>读不到 /api/job-families</b><br>请确认本地服务（8787）正在运行。</div>';
+  }
+}
+
+$('q').oninput = e => { state.q = e.target.value.trim(); renderTable(); };
+$('sort').onchange = e => { state.sort = e.target.value; renderTable(); };
+$('fBlock').onchange = e => { state.onlyBlock = e.target.checked; renderTable(); };
+load();
+
+</script>
+
+
+</body></html>

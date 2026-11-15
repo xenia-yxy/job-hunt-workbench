@@ -1,0 +1,11 @@
+{
+  "schema": "job-family-rules/v1",
+  "_note": "岗位分类规则结构示例。真实实例规则由工作区已有的规则文件提供；本文件只给中性结构，不进主加载链。",
+  "preferred": ["<FAMILY_1>", "<FAMILY_2>"],
+  "low": ["<FAMILY_3>"],
+  "rules": [
+    { "family": "<FAMILY_1>", "kw": ["<KEYWORD_1>", "<KEYWORD_2>"] },
+    { "family": "<FAMILY_2>", "kw": ["<KEYWORD_3>"] }
+  ],
+  "fallback": "<FALLBACK_LABEL>"
+}

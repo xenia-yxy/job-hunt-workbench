@@ -1,0 +1,130 @@
+{
+  "schema": "routes/v2",
+  "_note": "工作台导航骨架：首页 + 五段流程。侧栏只渲染每段 role=primary 的那一项（一个入口一行），其余产物写进该项的 variants，或交给 app.json 的 artifact_scans 自动扫描。url 一律为项目根相对路径。",
+  "groups": [
+    {
+      "id": "home",
+      "label": "首页",
+      "order": 0,
+      "kind": "link",
+      "url": "<HOME_PAGE>.html",
+      "note": "总览：五段进度、关键数据、从哪继续"
+    },
+    {
+      "id": "judge",
+      "label": "岗位判断",
+      "index": "①",
+      "order": 1,
+      "flow": "输入：简历与个人情况 ｜ 输出：岗位族匹配排序与方向建议 ｜ 下一步：挑候选族做市场调研"
+    },
+    {
+      "id": "research",
+      "label": "市场调研",
+      "index": "②",
+      "order": 2,
+      "flow": "输入：候选岗位族 ｜ 输出：真实门槛、JD、匹配度 ｜ 下一步：按族挑简历版本"
+    },
+    {
+      "id": "resume",
+      "label": "简历定制",
+      "index": "③",
+      "order": 3,
+      "flow": "输入：族画像与技术栈顺序 ｜ 输出：对应版本简历 ｜ 下一步：确认投递条件"
+    },
+    {
+      "id": "deliver",
+      "label": "投递",
+      "index": "④",
+      "order": 4,
+      "flow": "输入：筛选条件 + 简历版本 ｜ 输出：投递台账 ｜ 下一步：跟踪沟通"
+    },
+    {
+      "id": "track",
+      "label": "跟踪与回复",
+      "index": "⑤",
+      "order": 5,
+      "flow": "输入：沟通与进度 ｜ 输出：状态、面试准备、回复草稿 ｜ 下一步：复盘并调整条件"
+    }
+  ],
+  "items": [
+    {
+      "id": "<JUDGE_PRIMARY_ID>",
+      "label": "<JUDGE_PRIMARY_LABEL>",
+      "group": "judge",
+      "role": "primary",
+      "url": "<JUDGE_PAGE>.html",
+      "order": 0,
+      "note": "<本页面的作用>",
+      "variants": [
+        {
+          "id": "<REPORT_ID>",
+          "label": "<报告名称>",
+          "url": "<REPORT_PAGE>.html",
+          "note": "<报告口径>"
+        },
+        {
+          "id": "<DOC_ID>",
+          "label": "<原文名称>",
+          "url": "工作台-文档.html?src=<DOC_FILE>.md",
+          "note": "<Markdown 原文>",
+          "badge": "原文"
+        }
+      ]
+    },
+    {
+      "id": "<RESEARCH_PRIMARY_ID>",
+      "label": "<调研主视图>",
+      "group": "research",
+      "role": "primary",
+      "url": "<SURVEY_PAGE>.html",
+      "order": 0,
+      "note": "<主视图说明，大文件可提示点 ↗ 新标签>",
+      "variants": []
+    },
+    {
+      "id": "<RESUME_PRIMARY_ID>",
+      "label": "<简历索引>",
+      "group": "resume",
+      "role": "primary",
+      "url": "<RESUME_INDEX>.html",
+      "order": 0,
+      "note": "<索引说明>",
+      "variants": [
+        {
+          "id": "resume_master",
+          "label": "母版",
+          "url": "<RESUME_MASTER>.html",
+          "note": "其余版本由它派生"
+        }
+      ]
+    },
+    {
+      "id": "<DELIVER_PRIMARY_ID>",
+      "label": "<投递台账>",
+      "group": "deliver",
+      "role": "primary",
+      "url": "<LEDGER_PAGE>.html",
+      "order": 0,
+      "note": "append-only 事件索引",
+      "variants": [
+        {
+          "id": "<SCAN_REPORT_ID>",
+          "label": "<扫描报告>",
+          "url": "工作台-文档.html?src=<SCAN_REPORT>.md",
+          "note": "<报告口径>"
+        }
+      ]
+    },
+    {
+      "id": "<TRACK_PRIMARY_ID>",
+      "label": "<跟踪主应用>",
+      "group": "track",
+      "role": "primary",
+      "url": "<APP_PAGE>.html",
+      "order": 0,
+      "note": "唯一可写页面",
+      "badge": "可写",
+      "badge_kind": "write"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "accounts/v1",
+  "_note": "账号池结构示例，全占位。真实账号文件由运行时或本地实例配置提供，绝不进通用模板仓库。",
+  "accounts": [
+    {
+      "id": "<ACCOUNT_ID>",
+      "label": "<ACCOUNT_LABEL>",
+      "daily_limit": 150,
+      "status": "active",
+      "browser_binding": null,
+      "lanes": ["<LANE_ID>"]
+    }
+  ],
+  "updated_at": "<ISO_TIMESTAMP>"
+}

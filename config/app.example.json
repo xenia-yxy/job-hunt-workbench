@@ -1,0 +1,50 @@
+{
+  "schema": "app/v1",
+  "_note": "运行参数。默认端口沿用当前工作区，输出文件名为占位符，实例值放 config/local/app.json。",
+  "port": 8787,
+  "cors": {
+    "origin": "*",
+    "methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "headers": "Content-Type"
+  },
+  "files": {
+    "data": "<DATA_FILE>.json",
+    "backup": "<BACKUP_FILE>.json",
+    "csv_main": "<MAIN_CSV>.csv",
+    "csv_campus": "<CAMPUS_CSV>.csv",
+    "app_html": "<APP_PAGE>.html",
+    "rules_fallback": "<RULES_FILE>.json"
+  },
+  "storage_namespace": "wb",
+  "api_base": "",
+  "static": {
+    "cache_control": "no-store"
+  },
+  "sources": {
+    "_note": "工作台只读数据源。全部为项目根相对路径；缺失时接口返回 SOURCE_MISSING，页面显式提示，不静默兜底。",
+    "job_families": "<METRICS_JSON>",
+    "resume_versions": "<RESUME_VERSIONS_JSON>",
+    "atlas_deep_link": "<ATLAS_PAGE>#p-",
+    "doc_roots": ["<DOC_ROOT>"],
+    "doc_allow": ["<DOC_FILE>.md"]
+  },
+  "artifact_scans": [
+    {
+      "_note": "段内产物自动发现：按同层通配扫描，命中的文件成为该段主视图的变体。group 取值见 routes.json 的 groups[].id。",
+      "group": "<GROUP_ID>",
+      "pattern": "<DIR>/*/<FILE>.html",
+      "label_from": "dirname",
+      "sort": "mtime_desc",
+      "badge": "<BADGE>",
+      "note": "<NOTE>"
+    },
+    {
+      "group": "<GROUP_ID>",
+      "pattern": "<PREFIX>_*.html",
+      "label_from": "basename",
+      "strip_prefix": "<PREFIX>_",
+      "exclude": ["<PREFIX>_<EXCLUDED>.html"],
+      "sort": "name"
+    }
+  ]
+}

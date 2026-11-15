@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>工作台 · 总览</title>
+<style>
+:root{
+  --bg:#14161a;--panel:#1c1f26;--panel2:#232731;--line:#2e333e;--line2:#39404d;
+  --ink:#e8ebf1;--mut:#8b93a3;--dim:#6f7889;--accent:#7aa8ff;--ok:#5fd39a;--warn:#f0be5f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:13px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+button{font-family:inherit}
+.wrap{margin:0 auto;padding:20px 18px 48px}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:4px}
+.hl{min-width:0}
+h1{margin:0;font-size:18px;letter-spacing:.2px;line-height:1.4}
+.sub{margin:5px 0 0;font-size:11.5px;color:var(--mut);line-height:1.7;max-width:760px}
+.hr{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.ro{border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-size:10.5px;
+  color:var(--mut);white-space:nowrap}
+.upd{font-size:10.5px;color:var(--dim);white-space:nowrap}
+.upd b{color:#8fb3e8;font-weight:500}
+
+.sec-h{display:flex;align-items:baseline;gap:8px;margin:20px 0 9px}
+.sec-h h2{margin:0;font-size:12.5px;font-weight:600;letter-spacing:.3px;color:#c7cfdc}
+.sec-h span{font-size:10.5px;color:var(--dim)}
+
+/* KPI：一行五格，数字最大，标签次之，注释最轻 */
+.kpis{display:flex;flex-wrap:wrap;gap:9px}
+.kpi{flex:1 1 132px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;min-width:0}
+.kpi .v{font-size:20px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums;
+  letter-spacing:-.2px}
+.kpi .v.na{color:#5b6472;font-size:16px;font-weight:500}
+.kpi .l{font-size:11px;color:#9aa3b3;margin-top:2px}
+.kpi .h{font-size:10px;color:var(--dim);margin-top:0;line-height:1.5}
+
+/* 五段：flex 换行，第一行 3 张、第二行 2 张自动撑满，不留空洞 */
+.flow{display:flex;flex-wrap:wrap;gap:10px}
+.stage{flex:1 1 calc(33.333% - 7px);min-width:0;background:var(--panel);border:1px solid var(--line);
+  border-radius:11px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;
+  transition:border-color .14s,background .14s}
+.stage:hover{border-color:var(--line2);background:#1e222a}
+.stage.empty{border-style:dashed}
+.sh{display:flex;align-items:center;gap:8px;min-width:0}
+.sh .idx{flex-shrink:0;width:19px;height:19px;border-radius:50%;border:1px solid rgba(122,168,255,.4);
+  color:#a9c7ff;font-size:11px;font-weight:600;display:flex;align-items:center;
+  justify-content:center;line-height:1}
+.sh .sn{flex:1;min-width:0}
+.sh .sn b{display:block;font-size:13px;font-weight:600;line-height:1.45}
+.sh .sn i{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;font-size:10.5px;color:var(--dim);font-style:normal;line-height:1.45;margin-top:1px}
+.sh .n{flex-shrink:0;font-size:9.5px;color:#7d8798;background:rgba(255,255,255,.055);
+  border-radius:20px;padding:1px 7px;font-variant-numeric:tabular-nums}
+
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{border:1px solid var(--line);background:var(--panel2);color:#b6c0cf;border-radius:6px;
+  padding:3px 8px;font-size:11px;cursor:pointer;line-height:1.5;display:inline-flex;
+  align-items:center;gap:4px;max-width:100%;transition:border-color .12s,color .12s}
+.chip:hover{border-color:rgba(122,168,255,.5);color:#dbe8ff}
+.chip .cb{font-size:9px;color:#6f7889}
+.chip.pri{color:#d6e5ff;border-color:rgba(122,168,255,.34);background:rgba(122,168,255,.10)}
+.chip.more{color:#8b95a4;border-style:dashed;cursor:default}
+.chip.more:hover{border-color:var(--line2);color:#a8b2c2}
+
+.io{display:flex;gap:6px;align-items:baseline;font-size:10.5px;color:var(--dim);line-height:1.6}
+.io b{color:#828d9f;font-weight:600;flex-shrink:0;font-size:10px}
+.io span{flex:1;min-width:0}
+.next{margin-top:auto;padding:7px 0 0 9px;border-top:1px dashed var(--line);font-size:10.5px;
+  color:#8794a8;line-height:1.6;position:relative}
+.next::before{content:"";position:absolute;left:0;top:9px;bottom:1px;width:2px;border-radius:2px;
+  background:rgba(122,168,255,.42)}
+.next b{color:#9dc0ff;font-weight:600;margin-right:5px;font-size:10px}
+
+/* 口径说明：默认收起，不抢内容 */
+@media(max-width:1120px){ .stage{flex-basis:calc(50% - 5px)} }
+@media(max-width:720px){ .stage{flex-basis:100%} }
+
+.meta{margin-top:20px;border-top:1px solid var(--line);padding-top:10px;
+  font-size:10.5px;color:var(--dim);line-height:1.9}
+.meta summary{cursor:pointer;color:#8b95a4;font-size:11px;list-style:none;
+  display:inline-flex;align-items:center;gap:5px;padding:2px 0}
+.meta summary::-webkit-details-marker{display:none}
+.meta summary::before{content:"▸";font-size:8px;color:#5f6a7a;transition:transform .15s}
+.meta[open] summary::before{transform:rotate(90deg)}
+.meta summary:hover{color:#c3ccdb}
+.meta .mb{margin-top:6px}
+.meta code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;
+  padding:0 4px;font-size:10px;color:#a8b2c2}
+</style></head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hl">
+      <h1>总览</h1>
+      <p class="sub">一条链路：判断方向 → 调研市场 → 定制简历 → 投递 → 跟踪回复。
+        每段的报告、版本、快照都在段内切换，本页只汇总状态。</p>
+    </div>
+    <div class="hr">
+      <span class="ro">只读 · 不改数据</span>
+      <span class="upd" id="upd"></span>
+    </div>
+  </header>
+
+  <div class="sec-h"><h2>当前数据</h2><span id="kpiHint">读取中…</span></div>
+  <section class="kpis" id="kpis"></section>
+
+  <div class="sec-h"><h2>五段流程</h2><span>点按钮直接进入对应页面</span></div>
+  <section class="flow" id="flow"></section>
+
+  <details class="meta">
+    <summary>数据口径与配置</summary>
+    <div class="mb" id="foot">正在读取接口…</div>
+  </details>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function API(p){
+  try {
+    const r = await fetch(p + (p.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now(), {cache:'no-store'});
+    return await r.json();
+  } catch(e){ return null; }
+}
+function viewsOf(it){
+  const out = [{id:it.id, label:it.label||it.id, url:it.url, note:it.note||'',
+                badge:it.badge||'', source:'primary'}];
+  for(const v of (it.variants||[])) if(v && v.url) out.push(v);
+  return out;
+}
+// 首页在 iframe 里：优先让壳层切页（保留导航态），否则整页跳转
+function go(itemId, viewId){
+  const p = window.parent;
+  if(p && p !== window && typeof p.wbOpen === 'function'){ p.wbOpen(itemId, viewId); return; }
+  const b = document.querySelector('.chip[data-item="' + itemId + '"][data-view="' + viewId + '"]');
+  if(b){ location.href = b.dataset.url; }
+}
+function kpi(v, label, hint){
+  const na = (v === null || v === undefined || v === '');
+  return '<div class="kpi"><div class="v' + (na ? ' na' : '') + '">' + esc(na ? '—' : v) +
+    '</div><div class="l">' + esc(label) + '</div>' +
+    (hint ? '<div class="h">' + esc(hint) + '</div>' : '') + '</div>';
+}
+function parseFlow(flow){
+  const o = {input:'', output:'', next:''};
+  String(flow || '').split('｜').forEach(seg => {
+    const m = /^([^：:]{2,6})[：:]\s*(.*)$/.exec(seg.trim());
+    if(!m) return;
+    if(m[1].indexOf('输入') >= 0) o.input = m[2];
+    else if(m[1].indexOf('输出') >= 0) o.output = m[2];
+    else if(m[1].indexOf('下一步') >= 0) o.next = m[2];
+  });
+  return o;
+}
+
+(async () => {
+  const [routes, jf, ledger] = await Promise.all([
+    API('/api/routes'), API('/api/job-families'), API('/api/ledger-index?limit=1')
+  ]);
+
+  const R = (routes && routes.routes) || {groups:[], items:[]};
+  const items = (R.items || []).slice().sort((a,b) => (a.order||0) - (b.order||0));
+  const groups = R.groups || [];
+  const flows = items.filter(i => i.role !== 'link');
+
+  // ---- 关键数据：全部来自只读接口，取不到就是「—」，不猜
+  const jfOk  = jf && jf.ok;
+  const ledOk = ledger && ledger.ok;
+  const nViews = items.reduce((n, i) => n + viewsOf(i).length, 0);
+
+  $('kpis').innerHTML = [
+    kpi(jfOk ? jf.totals.families : null, '岗位族', '已跑通匹配'),
+    kpi(jfOk ? jf.total : null, '有效样本',
+        jfOk && jf.total_open != null ? ('在招 ' + jf.total_open) : '采集去重后'),
+    kpi(ledOk ? ledger.totals.lines : null, '台账事件', 'append-only'),
+    kpi(ledOk ? ledger.totals.delivered : null, '已投递', '有 delivery 记录'),
+    kpi(nViews || null, '可打开视图', items.length + ' 个入口')
+  ].join('');
+  $('kpiHint').textContent = jfOk ? ('数据源 ' + (jf.source || '—')) : '部分数据源未接入';
+
+  // ---- 五段流程卡片：第一行 3 张、其余自动撑满整行
+  $('flow').innerHTML = flows.map(it => {
+    const g = groups.find(x => x.id === it.group) || {};
+    const vs = viewsOf(it);
+    const io = parseFlow(g.flow);
+    const MAXC = 3;
+    // 主视图的 badge 常与自己的名字重复（「22 族定制简历 · 22 族」），重复就不显示
+    const norm = x => String(x || '').replace(/\s+/g, '');
+    const badgeOf = v => (v.badge && norm(v.label).indexOf(norm(v.badge)) < 0)
+      ? '<span class="cb">' + esc(v.badge) + '</span>' : '';
+    const chips = vs.slice(0, MAXC).map((v, i) =>
+      '<button class="chip' + (i === 0 ? ' pri' : '') + '" data-item="' + esc(it.id) + '"' +
+      ' data-view="' + esc(v.id) + '" data-url="' + esc(v.url) + '"' +
+      ' title="' + esc((v.note || v.url) + (v.source === 'scan' ? '（自动发现）' : '')) + '">' +
+      esc(v.label) + badgeOf(v) + '</button>'
+    ).join('') + (vs.length > MAXC
+      ? '<span class="chip more" title="其余 ' + (vs.length - MAXC) + ' 个在段内视图条里">+' +
+        (vs.length - MAXC) + ' 个</span>' : '');
+    return '<article class="stage">' +
+      '<div class="sh"><span class="idx">' + esc(g.index || '·') + '</span>' +
+        '<div class="sn"><b>' + esc(g.label || it.label) + '</b>' +
+        '<i>' + esc(io.output || it.note || '') + '</i></div>' +
+        '<span class="n" title="该段可切换的视图数">' + vs.length + '</span></div>' +
+      '<div class="chips">' + chips + '</div>' +
+      (io.input ? '<div class="io"><b>输入</b><span>' + esc(io.input) + '</span></div>' : '') +
+      (io.next ? '<div class="next"><b>下一步</b>' + esc(io.next) + '</div>' : '') +
+    '</article>';
+  }).join('') || '<div class="kpi">导航配置为空：检查 <code>config/local/routes.json</code></div>';
+
+  // ---- 最近更新：放到页头右侧，底部只留口径说明
+  let latest = '', latestAt = 0;
+  items.forEach(it => viewsOf(it).forEach(v => {
+    if(v.mtime){ const t = Date.parse(v.mtime) || 0; if(t > latestAt){ latestAt = t; latest = v.label; } }
+  }));
+  if(latest){
+    $('upd').innerHTML = '最近更新 <b>' + esc(latest) + '</b> · ' +
+      esc(new Date(latestAt).toLocaleDateString('zh-CN'));
+    $('upd').title = new Date(latestAt).toLocaleString('zh-CN');
+  }
+
+  $('foot').innerHTML =
+    '<div>岗位族与样本来自 <code>' + esc(jfOk ? (jf.source || '—') : '未配置') + '</code>' +
+    '，台账来自 <code>runs/*/ledger.jsonl</code>。所有页面只读，写入只发生在「招聘跟踪」主应用。</div>' +
+    '<div>入口与视图由 <code>config/local/routes.json</code> + <code>app.json</code> 的 ' +
+    '<code>artifact_scans</code> 合成：新增简历版本或图谱快照会自动出现在对应段落，不用改页面代码。</div>';
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.chip');
+    if(!b || !b.dataset.view) return;
+    go(b.dataset.item, b.dataset.view);
+  });
+})();
+</script>
+</body></html>

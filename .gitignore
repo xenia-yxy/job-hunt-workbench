@@ -1,0 +1,40 @@
+# 本地实例配置（含身份、渠道、账号、数据源路径，绝不提交）
+# 只保留说明文件，让你 clone 下来能看到该往哪放什么
+config/local/*
+!config/local/README.md
+rules/local/*
+!rules/local/README.md
+
+# 外部 AI 会话产物
+workbuddy_out/*
+!workbuddy_out/README.md
+
+# 采集 / 投递 / 调研的运行时数据
+runs/
+survey/
+unified_data.json*
+*.jsonl
+*.csv
+
+# 个人产物：简历、报告、图谱快照
+简历_*.html
+非开发岗方向分析_*.html
+跟踪结果页*.html
+atlas.html
+
+# 浏览器登录态与账号
+accounts.json
+scope.json
+*.cookie
+profile/
+.user-data/
+
+# 其它
+__pycache__/
+*.pyc
+node_modules/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+workbuddy_out/verify/hash-baseline.json

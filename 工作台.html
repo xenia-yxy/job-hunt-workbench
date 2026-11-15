@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>求职工作台</title>
+<style>
+:root{
+  --bg:#14161a;--panel:#1c1f26;--panel2:#232731;--line:#2e333e;--line2:#39404d;
+  --ink:#e8ebf1;--mut:#8b93a3;--dim:#6f7889;--accent:#7aa8ff;--ok:#5fd39a;--warn:#f0be5f;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);overflow:hidden;
+  font:13px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+.app{display:flex;height:100vh}
+button{font-family:inherit}
+:focus-visible{outline:2px solid rgba(122,168,255,.65);outline-offset:1px}
+
+/* ================= 侧栏：只放导航，不放产物 ================= */
+.side{width:264px;flex-shrink:0;border-right:1px solid var(--line);background:var(--panel);
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+  transition:margin-left .18s ease,opacity .18s ease}
+body.noside .side{display:none}
+
+.brand{padding:11px 12px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.brand .tt{flex:1;min-width:0}
+.brand h1{margin:0;font-size:13.5px;font-weight:600;letter-spacing:.2px;line-height:1.35;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand p{margin:2px 0 0;font-size:9.5px;color:#656e7e;line-height:1.4;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{border:1px solid transparent;background:transparent;color:var(--mut);border-radius:6px;
+  width:26px;height:26px;flex-shrink:0;cursor:pointer;font-size:12px;line-height:1;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;transition:background .12s,color .12s}
+.iconbtn:hover{color:var(--ink);background:var(--panel2);border-color:var(--line)}
+
+/* 搜索：输入框 + 快捷键提示，命中时出现清空键 */
+.search{padding:8px;border-bottom:1px solid var(--line);flex-shrink:0;display:flex;gap:5px;align-items:center}
+.sbox{flex:1;min-width:0;position:relative;display:flex;align-items:center}
+.sbox .si{position:absolute;left:8px;font-size:12px;color:#5e6675;pointer-events:none}
+.sbox input{width:100%;min-width:0;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  border-radius:7px;padding:5px 26px 5px 24px;font-size:11.5px;font-family:inherit;outline:none;
+  transition:border-color .12s}
+.sbox input:focus{border-color:rgba(122,168,255,.55)}
+.sbox input::placeholder{color:#636b7a}
+.sbox kbd{position:absolute;right:7px;font:600 9.5px/1 inherit;color:#6b7382;
+  border:1px solid #3a4150;border-radius:4px;padding:2px 4px;pointer-events:none}
+.sbox input:focus + kbd{opacity:0}
+.search .iconbtn{width:26px;height:26px;font-size:10px}
+
+/* 导航：一段一行（功能入口）；产物在右侧视图条，不进侧栏 */
+.nav{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 8px 10px}
+.navrow{display:flex;align-items:center;width:100%;height:36px;padding:0 9px;border:0;border-radius:8px;
+  background:transparent;color:#b3bccb;cursor:pointer;text-align:left;font-family:inherit;
+  font-size:13px;font-weight:500;line-height:1;position:relative;
+  transition:background .12s,color .12s}
+.navrow:hover{background:rgba(255,255,255,.05);color:#e3e9f2}
+.navrow.on{background:linear-gradient(90deg,rgba(122,168,255,.20),rgba(122,168,255,.07));
+  color:#e2ecff;font-weight:600;box-shadow:inset 0 0 0 1px rgba(122,168,255,.18)}
+.navrow.on::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;
+  border-radius:2px;background:var(--accent)}
+.navrow .ix{flex-shrink:0;width:21px;font-size:12px;font-weight:700;color:#616a7a;
+  font-variant-numeric:tabular-nums;display:flex;align-items:center}
+.navrow.on .ix{color:#9dc0ff}
+.navrow .ix svg{width:14px;height:14px}
+.navrow .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.navrow .vc{flex-shrink:0;font-size:9.5px;color:#5f6878;padding:0 5px;border-radius:20px;
+  background:rgba(255,255,255,.05);min-width:18px;text-align:center;font-variant-numeric:tabular-nums}
+.navrow.on .vc{color:#a8c6f5;background:rgba(122,168,255,.16)}
+.navrow .ev{flex-shrink:0;width:16px;height:16px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;color:var(--mut);font-size:10px;opacity:0;margin-left:2px;transition:opacity .12s}
+.navrow:hover .ev{opacity:.85}
+.navrow .ev:hover{color:#cfe0ff;background:rgba(122,168,255,.22)}
+.navsep{height:1px;background:var(--line);margin:8px 9px 9px}
+.navgrp{font-size:9.5px;letter-spacing:.7px;color:#57606f;padding:3px 9px 5px;font-weight:600}
+
+/* 数据概况：把「服务状态 + 规模」从顶栏搬到这里，填掉侧栏中段的空白 */
+.sstat{margin:0 8px 8px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;
+  background:rgba(255,255,255,.024);display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;
+  cursor:pointer;flex-shrink:0;transition:border-color .12s,background .12s}
+.sstat:hover{border-color:var(--line2);background:rgba(255,255,255,.04)}
+.sstat .v{font-size:13px;font-weight:600;color:#cfd7e3;font-variant-numeric:tabular-nums;line-height:1.3}
+.sstat .v.na{color:#59616f;font-weight:400}
+.sstat .k{font-size:9.5px;color:#69717f;line-height:1.4;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+
+.side-foot{padding:7px 12px;border-top:1px solid var(--line);font-size:10px;color:#666e7d;
+  flex-shrink:0;display:flex;justify-content:space-between;gap:8px;line-height:1.5}
+.side-foot b{color:#9aa3b2;font-weight:600}
+
+/* ================= 顶栏：只有位置与动作 ================= */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{height:46px;flex-shrink:0;border-bottom:1px solid var(--line);background:var(--panel);
+  display:flex;align-items:center;gap:8px;padding:0 12px 0 8px}
+.top .proj{display:none;font-size:12.5px;font-weight:600;color:#cfd7e3;white-space:nowrap;
+  padding-right:8px;border-right:1px solid var(--line);margin-right:2px}
+body.noside .top .proj{display:inline}
+.top .sp{flex:1}
+
+/* 面包屑：段名可点（回主视图），当前视图名加粗 */
+.crumb{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:#8d97a6}
+.crumb .cl{border:0;background:transparent;color:#8d97a6;font:500 12px/1 inherit;font-family:inherit;
+  padding:4px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.crumb .cl:hover{color:#d6e5ff;background:rgba(122,168,255,.10)}
+.crumb .cs{color:#454c59;flex-shrink:0}
+.crumb .c2{color:#dde4ee;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:44vw}
+.crumb .c1{color:#dde4ee;font-weight:600}
+.crumb .cwt{font-size:9.5px;color:#f0c877;background:rgba(240,190,95,.12);
+  border:1px solid rgba(240,190,95,.3);border-radius:20px;padding:0 6px;line-height:1.7;
+  flex-shrink:0;font-weight:500}
+.crumb .c3{color:#6f7889;font-size:11.5px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:30vw;flex-shrink:1}
+.crumb .c3[hidden]{display:none}
+
+/* 服务状态：一个点，hover 出文字 */
+.hdot{width:8px;height:8px;border-radius:50%;background:#58606e;flex-shrink:0;margin:0 4px;
+  cursor:default;transition:background .2s,box-shadow .2s}
+.hdot.ok{background:var(--ok);box-shadow:0 0 0 3px rgba(95,211,154,.16)}
+.hdot.bad{background:#e0705f;box-shadow:0 0 0 3px rgba(224,112,95,.18)}
+
+.tbtn{border:1px solid var(--line);background:var(--panel2);color:#c3ccdb;border-radius:7px;
+  padding:5px 9px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;
+  display:flex;align-items:center;gap:5px;transition:border-color .12s,color .12s,background .12s}
+.tbtn:hover{border-color:var(--line2);color:#e3e9f2}
+.tbtn .tk{font-size:9px;background:rgba(122,168,255,.18);color:#a8c6f5;border-radius:20px;
+  padding:0 5px;line-height:1.6;font-variant-numeric:tabular-nums}
+.tbtn[aria-expanded="true"]{border-color:rgba(122,168,255,.5);color:#d6e5ff;background:rgba(122,168,255,.12)}
+
+/* ================= 视图条：段内产物切换 ================= */
+.views{height:36px;flex-shrink:0;border-bottom:1px solid var(--line);background:#181b21;
+  display:flex;align-items:center;gap:6px;padding:0 8px 0 10px;overflow:hidden}
+.views[hidden]{display:none}
+.views .vt{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;
+  scrollbar-width:none;height:100%}
+.views .vt::-webkit-scrollbar{display:none}
+.vtab{flex-shrink:0;display:flex;align-items:center;gap:5px;border:0;border-bottom:2px solid transparent;
+  background:transparent;color:#8d97a6;padding:0 9px;height:100%;font-size:11.5px;
+  font-family:inherit;cursor:pointer;white-space:nowrap;line-height:1.4;
+  transition:background .12s,color .12s,border-color .12s}
+.vtab:hover{background:rgba(255,255,255,.045);color:#cfd7e3}
+.vtab.on{color:#eaf1ff;font-weight:600;border-bottom-color:var(--accent);background:rgba(122,168,255,.07)}
+.vtab .vb{font-size:9px;color:#6c7686;background:rgba(255,255,255,.06);border-radius:20px;
+  padding:0 4px;line-height:1.6;font-weight:400}
+.vtab.on .vb{color:#a8c6f5;background:rgba(122,168,255,.18)}
+.flowbtn{flex-shrink:0;width:24px;height:24px;border:1px solid var(--line);background:transparent;
+  color:#7c8695;border-radius:50%;font-size:11px;font-family:inherit;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.flowbtn:hover{color:#c3cddb;border-color:var(--line2);background:var(--panel2)}
+
+/* 流程说明浮层 */
+.stagepop{position:absolute;right:10px;top:6px;z-index:6;width:380px;max-width:calc(100% - 20px);
+  background:#20242c;border:1px solid var(--line2);border-radius:10px;padding:11px 13px;
+  font-size:11.5px;line-height:1.7;color:#adb7c7;box-shadow:0 16px 38px rgba(0,0,0,.55)}
+.stagepop[hidden]{display:none}
+.stagepop .ttl{font-size:11.5px;color:#e2e9f3;font-weight:600;margin-bottom:6px}
+.stagepop .row{display:flex;gap:9px;padding:2px 0}
+.stagepop .k{flex-shrink:0;width:46px;color:#7a879c;font-weight:600}
+.stagepop .v{flex:1;min-width:0}
+
+/* ================= 内容区 ================= */
+.body{flex:1;display:flex;min-height:0;position:relative}
+#frame{flex:1;border:0;background:#0f1216;width:100%;height:100%;min-width:0}
+
+.load{position:absolute;inset:0;background:rgba(18,20,24,.94);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;z-index:5;font-size:12.5px;color:var(--mut)}
+.spin{width:22px;height:22px;border:2px solid rgba(122,168,255,.22);border-top-color:var(--accent);
+  border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.load .hint{font-size:11px;color:#7d8798;max-width:340px;text-align:center;line-height:1.7}
+
+/* 打不开时的兜底：比白屏可读 */
+.err{position:absolute;inset:0;z-index:7;background:rgba(18,20,24,.97);display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center}
+.err.on{display:flex}
+.err .ei{font-size:22px;opacity:.5}
+.err .et{font-size:13.5px;font-weight:600;color:#e3e9f2}
+.err .ed{font-size:11.5px;color:#8b93a3;line-height:1.8;max-width:460px}
+.err .ed code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+  font-size:11px;color:#a8b2c2;overflow-wrap:anywhere}
+.err .ea{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;justify-content:center}
+
+/* ================= 任务指令抽屉：覆盖内容区，不挤压 iframe ================= */
+.task{position:fixed;top:46px;right:0;bottom:0;width:384px;max-width:92vw;z-index:40;
+  background:var(--panel);border-left:1px solid var(--line2);display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .2s ease;box-shadow:-18px 0 44px rgba(0,0,0,.5)}
+body.taskopen .task{transform:none}
+.task .th{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid var(--line);
+  flex-shrink:0}
+.task .th h2{margin:0;font-size:13px;font-weight:600;flex:1}
+.task .tb{flex:1;min-height:0;overflow-y:auto;padding:12px;font-size:12px}
+.task .mut{color:var(--mut)}
+.task .box{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px;
+  margin:9px 0;line-height:1.75;font-size:11.5px;overflow-wrap:anywhere}
+.task .copy{width:100%;border:1px solid rgba(122,168,255,.45);color:#cfe0ff;background:transparent;
+  border-radius:8px;padding:7px 9px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.task .copy:hover{background:rgba(122,168,255,.12)}
+.tkcard{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px;
+  margin:7px 0;line-height:1.6;font-size:11.5px}
+.tkcard .copy{margin-top:6px;font-size:10.5px;padding:4px 7px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:0 6px;
+  font-size:9.5px;color:var(--mut);margin-left:5px}
+.resline{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;
+  margin:5px 0;font-size:11px}
+.empty{padding:16px 10px;color:var(--mut);font-size:11.5px;line-height:1.7}
+.scrim{position:fixed;inset:46px 0 0 0;background:rgba(0,0,0,.34);z-index:39;opacity:0;
+  pointer-events:none;transition:opacity .2s}
+body.taskopen .scrim{opacity:1;pointer-events:auto}
+
+/* toast 替代 alert */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,10px);z-index:60;
+  background:#262b34;border:1px solid var(--line2);color:#e2e9f3;border-radius:9px;
+  padding:9px 16px;font-size:12.5px;opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .18s;box-shadow:0 14px 34px rgba(0,0,0,.55);max-width:70vw}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media(max-width:980px){
+  .side{position:fixed;left:0;top:0;bottom:0;z-index:20;width:264px;
+    box-shadow:0 0 40px rgba(0,0,0,.6)}
+  body.noside .side{display:none}
+  .top .proj{display:inline}
+  .crumb .c2{max-width:36vw}
+}
+</style></head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <div class="tt">
+        <h1 id="title">求职工作台</h1>
+        <p>本地只读 · AI 由 WorkBuddy 承担</p>
+      </div>
+      <button class="iconbtn" id="btnHide" title="收起侧栏（[）">«</button>
+    </div>
+    <div class="search">
+      <div class="sbox">
+        <span class="si">⌕</span>
+        <input id="q" type="search" placeholder="搜索入口或视图" autocomplete="off">
+        <kbd>/</kbd>
+      </div>
+      <button class="iconbtn" id="btnClear" title="清空搜索" hidden>✕</button>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sstat" id="sstat" title="数据概况 · 点击回到首页">
+      <div><div class="v" id="ssFam">—</div><div class="k">岗位族</div></div>
+      <div><div class="v" id="ssSample">—</div><div class="k">有效样本</div></div>
+      <div><div class="v" id="ssLedger">—</div><div class="k">台账事件</div></div>
+      <div><div class="v" id="ssViews">—</div><div class="k">可打开视图</div></div>
+    </div>
+    <div class="side-foot"><span id="footL">—</span><span id="footR"></span></div>
+  </aside>
+
+  <div class="main">
+    <div class="top">
+      <button class="iconbtn" id="btnShow" title="显示 / 隐藏侧栏（[）">☰</button>
+      <span class="proj" id="projName">求职工作台</span>
+      <nav class="crumb" id="crumb" aria-label="当前位置"></nav>
+      <span class="c3" id="inPage" hidden></span>
+      <span class="sp"></span>
+      <span class="hdot" id="health" title="服务状态检查中">●</span>
+      <button class="tbtn" id="btnTask" aria-expanded="false">🧩 任务指令<span class="tk" hidden>0</span></button>
+      <button class="iconbtn" id="btnReload" title="重新加载当前页（R）">↻</button>
+      <button class="iconbtn" id="btnNewTab" title="在新标签打开当前页">↗</button>
+    </div>
+    <div class="views" id="views" hidden>
+      <div class="vt" id="vtabs" role="tablist" aria-label="本段的产物视图"></div>
+      <button class="flowbtn" id="btnFlow" title="这一步的输入 / 输出 / 下一步">i</button>
+    </div>
+    <div class="body">
+      <iframe id="frame" title="内容" allow="clipboard-write; clipboard-read" referrerpolicy="same-origin"></iframe>
+      <div class="stagepop" id="stagePop" hidden></div>
+      <div class="load" id="load">
+        <div class="spin"></div>
+        <div id="loadText">正在加载…</div>
+        <div class="hint" id="loadHint" hidden>加载较慢。可以点右上角「↗」在新标签打开。</div>
+      </div>
+      <div class="err" id="err">
+        <div class="ei">⚠</div>
+        <div class="et">这个页面打不开</div>
+        <div class="ed" id="errDetail"></div>
+        <div class="ea">
+          <button class="tbtn" id="errRetry">重试</button>
+          <button class="tbtn" id="errNewTab">在新标签打开</button>
+          <button class="tbtn" id="errHome">回到首页</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="task" id="taskPanel" aria-hidden="true">
+  <div class="th">
+    <h2>WorkBuddy 任务指令</h2>
+    <button class="iconbtn" id="btnTaskClose" title="关闭（Esc）">✕</button>
+  </div>
+  <div class="tb">
+    <p class="mut" style="font-size:11px;line-height:1.75;margin:0">工作台不调用任何模型、不触发采集 / 投递 / 回复。分析与话术由 WorkBuddy 会话执行，结果写入本地产物目录后在此只读列举。</p>
+    <div class="box" id="wbInfo">正在读取接口配置…</div>
+    <button class="copy" id="btnCopyGeneral">📋 复制通用任务指令</button>
+    <p class="mut" style="margin:14px 0 0;font-size:10.5px">任务模板（元数据只读）</p>
+    <div id="taskList" class="mut" style="font-size:11px">正在读取…</div>
+    <p class="mut" style="margin:14px 0 0;font-size:10.5px">已落盘结果（只列文件名）</p>
+    <div id="resultList" class="mut" style="font-size:11px">正在读取…</div>
+  </div>
+</aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const frame = $('frame');
+const LS = {last:'wb.workbench.last', view:'wb.workbench.views', hidden:'wb.workbench.hidden'};
+const state = {routes:{groups:[],items:[],variants:0}, cfg:{}, tasks:[], results:null,
+               current:'', view:'', curUrl:'', q:'', loading:0};
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function absUrl(u){ try { return new URL(u, location.origin + '/').href; } catch(e){ return u; } }
+function shortPath(u){
+  try { const x = new URL(u, location.origin + '/'); return decodeURIComponent(x.pathname + x.search + x.hash); }
+  catch(e){ return u; }
+}
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+
+/* ---------------- 小提示 ---------------- */
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2200);
+}
+
+/* ---------------- 导航：一段一行（功能入口），产物在右侧视图条 ---------------- */
+const HOME_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true">' +
+  '<path d="M3 7.2L8 3l5 4.2V13a.8.8 0 0 1-.8.8h-2.6v-3.6H6.4v3.6H3.8A.8.8 0 0 1 3 13z" ' +
+  'fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+
+// 一个导航项的视图 = 主视图 + 变体（配置写的报告 / 扫描出的简历版本与快照）
+function viewsOf(it){
+  const out = [{id:it.id, label:it.label||it.id, url:it.url, note:it.note||'',
+                badge:it.badge||'', badge_kind:it.badge_kind||'', source:'primary'}];
+  for(const v of (it.variants||[])) if(v && v.url) out.push(v);
+  return out;
+}
+function savedViews(){ try { return JSON.parse(lsGet(LS.view) || '{}') || {}; } catch(e){ return {}; } }
+function saveView(itemId, viewId){
+  const m = savedViews(); m[itemId] = viewId; lsSet(LS.view, JSON.stringify(m));
+}
+function groupOf(it){ return (state.routes.groups || []).find(g => g.id === (it && it.group)) || null; }
+function itemById(id){ return (state.routes.items || []).find(x => x.id === id) || null; }
+function mainViewOf(it){ const vs = viewsOf(it); return vs[0]; }
+
+function renderNav(){
+  const groups = (state.routes.groups || []).slice().sort((a,b) => (a.order||0)-(b.order||0));
+  const items  = (state.routes.items  || []).slice().sort((a,b) => (a.order||0)-(b.order||0));
+  const q = (state.q || '').toLowerCase();
+
+  if(!items.length){
+    $('nav').innerHTML = '<div class="empty">导航配置缺失或为空。<br>检查 <b>config/local/routes.json</b>' +
+      '（结构见 <b>config/routes.example.json</b>）。</div>';
+    $('footL').textContent = '配置缺失';
+    return;
+  }
+
+  const gOf = id => groups.find(g => g.id === id) || {};
+  const hit = it => !q || [it.label, it.note, gOf(it.group).label]
+    .concat(viewsOf(it).map(v => v.label)).join(' ').toLowerCase().indexOf(q) >= 0;
+
+  const row = it => {
+    const g = gOf(it.group), n = viewsOf(it).length, isHome = it.role === 'link';
+    // 侧栏写「段名」（岗位判断），不写段内主视图名（22 族匹配判断）
+    const nm = isHome ? (it.label || it.id) : (g.label || it.label || it.id);
+    const tip = (nm + (g.flow ? '\n' + g.flow : '')) +
+      (n > 1 ? '\n' + n + ' 个视图，右侧切换' : '') + (it.note ? '\n' + it.note : '');
+    return '<button class="navrow' + (it.id === state.current ? ' on' : '') + '"' +
+      ' data-id="' + esc(it.id) + '" title="' + esc(tip) + '">' +
+      '<span class="ix">' + (isHome ? HOME_SVG : esc(g.index || '·')) + '</span>' +
+      '<span class="nm">' + esc(nm) + '</span>' +
+      (n > 1 ? '<span class="vc">' + n + '</span>' : '') +
+      '<span class="ev" data-ext="1" title="在新标签打开">↗</span>' +
+    '</button>';
+  };
+
+  const links = items.filter(i => i.role === 'link' && hit(i));
+  const flows = items.filter(i => i.role !== 'link' && hit(i));
+
+  let html = links.map(row).join('');
+  if(flows.length){
+    html += '<div class="navsep"></div><div class="navgrp">求职流程</div>' + flows.map(row).join('');
+  }
+  if(!links.length && !flows.length){
+    html = '<div class="empty">没有匹配「' + esc(state.q) + '」的入口。试试「岗位」「调研」「简历」「台账」。</div>';
+  }
+
+  const scroll = $('nav').scrollTop;
+  $('nav').innerHTML = html;
+  $('nav').scrollTop = scroll;
+
+  $('nav').querySelectorAll('.navrow').forEach(el => {
+    el.onclick = e => {
+      const it = itemById(el.dataset.id);
+      if(e.target.closest('[data-ext]')){
+        e.stopPropagation();
+        const vs = it ? viewsOf(it) : [];
+        const v = vs.find(x => x.id === state.view) || vs[0];
+        if(v) window.open(absUrl(v.url), '_blank', 'noopener');
+        return;
+      }
+      if(document.body.classList.contains('taskopen')) setTask(false);
+      openItem(el.dataset.id);
+    };
+  });
+
+  const nv = items.reduce((n, i) => n + viewsOf(i).length, 0);
+  $('footL').innerHTML = '<b>' + items.length + '</b> 个入口';
+  $('footR').textContent = q ? '筛出 ' + (links.length + flows.length) : '';
+  $('ssViews').textContent = nv;
+  $('ssViews').classList.remove('na');
+}
+
+/* ---------------- 面包屑 ---------------- */
+function renderCrumb(it, v){
+  const el = $('crumb');
+  if(!it){ el.innerHTML = ''; return; }
+  if(it.role === 'link'){
+    el.innerHTML = '<span class="c1">首页</span>';
+    return;
+  }
+  const g = groupOf(it);
+  const gLbl = (g && g.label) || it.label || it.id;
+  const cur = (v && v.label) || it.label || '';
+  const writable = it.writable === true || (v && v.badge_kind === 'write');
+  el.innerHTML =
+    '<button class="cl" id="crumbSeg" title="回到「' + esc(gLbl) + '」主视图">' + esc(gLbl) + '</button>' +
+    (cur && cur !== gLbl ? '<span class="cs">/</span><span class="c2" title="' +
+      esc(shortPath(v && v.url)) + '">' + esc(cur) + '</span>' : '') +
+    (writable ? '<span class="cwt" title="这一页会写入本地数据（其它页面只读）">可写</span>' : '');
+  const b = $('crumbSeg');
+  if(b) b.onclick = () => switchView(it, mainViewOf(it));
+}
+
+/* ---------------- 视图条：该段产物的切换入口 ---------------- */
+function renderViews(it){
+  const views = viewsOf(it);
+  const box = $('views');
+  if(views.length <= 1){ box.hidden = true; return; }
+  box.hidden = false;
+  $('vtabs').innerHTML = views.map(v =>
+    '<button class="vtab' + (v.id === state.view ? ' on' : '') + '" role="tab"' +
+      ' aria-selected="' + (v.id === state.view ? 'true' : 'false') + '"' +
+      ' tabindex="' + (v.id === state.view ? '0' : '-1') + '"' +
+      ' data-v="' + esc(v.id) + '"' +
+      ' title="' + esc((v.note || v.label || '') + (v.source === 'scan' ? '（自动发现）' : '')) + '">' +
+      esc(v.label || v.id) +
+      (v.badge ? '<span class="vb">' + esc(v.badge) + '</span>' : '') +
+    '</button>').join('');
+}
+
+/* ---------------- 流程说明浮层 ---------------- */
+function showFlow(it, on){
+  const pop = $('stagePop'), g = groupOf(it);
+  const flow = (g && g.flow) || '';
+  if(on === undefined) on = pop.hidden;
+  if(!on || !flow){ pop.hidden = true; return; }
+  const rows = flow.split('｜').map(s => s.trim()).filter(Boolean).map(seg => {
+    const m = /^([^：:]{2,6})[：:]\s*(.*)$/.exec(seg);
+    return m ? '<div class="row"><span class="k">' + esc(m[1]) + '</span>' +
+        '<span class="v">' + esc(m[2]) + '</span></div>'
+      : '<div class="row"><span class="v">' + esc(seg) + '</span></div>';
+  }).join('');
+  pop.innerHTML = '<div class="ttl">' + esc((g.index ? g.index + ' ' : '') + (g.label || g.id)) + '</div>' + rows;
+  pop.hidden = false;
+}
+
+/* ---------------- 打开 / 加载态 ---------------- */
+let loadTimer = null;
+function setLoading(on, label){
+  clearTimeout(loadTimer);
+  if(on){
+    $('err').classList.remove('on');
+    $('loadText').textContent = '正在加载 ' + (label || '') + '…';
+    $('loadHint').hidden = true;
+    $('load').style.display = 'flex';
+    loadTimer = setTimeout(() => { $('loadHint').hidden = false; }, 8000);
+  } else {
+    $('load').style.display = 'none';
+  }
+}
+
+// 切换视图：只换 iframe 内容，不换导航段
+function switchView(it, v){
+  if(!it || !v) return;
+  state.view = v.id;
+  saveView(it.id, v.id);
+  const abs = absUrl(v.url);
+  $('err').classList.remove('on');
+  $('stagePop').hidden = true;
+  renderCrumb(it, v);
+  renderViews(it);
+  if(frame.src === abs){
+    try { frame.contentWindow.location.reload(); } catch(e){ frame.src = abs; }
+    return;
+  }
+  setLoading(true, v.label || it.label || '页面');
+  currentUrl = abs;
+  state.curUrl = abs;
+  $('inPage').hidden = true;
+  $('inPage').textContent = '';
+  frame.src = abs;
+}
+
+// 打开某个入口：默认回到该入口上次看的视图，否则主视图
+function openItem(itemId, viewId){
+  const it = itemById(itemId);
+  if(!it) return;
+  state.current = itemId;
+  lsSet(LS.last, itemId);
+  if(!state.q) renderNav();
+  else $('nav').querySelectorAll('.navrow').forEach(x =>
+    x.classList.toggle('on', x.dataset.id === itemId));
+  const views = viewsOf(it);
+  const want = viewId || savedViews()[itemId];
+  switchView(it, views.find(v => v.id === want) || views[0]);
+}
+// 供内页（首页卡片）调用：同源 iframe 内直接切段切视图，不必整页跳转
+window.wbOpen = openItem;
+window.wbRoutes = () => state.routes;
+
+/* ---------------- iframe 兜底：加载后确认不是 404 / 空文档 ---------------- */
+let currentUrl = '';
+function probeFrame(){
+  setLoading(false);
+  let doc = null;
+  try { doc = frame.contentDocument; } catch(e){ return; }   // 跨域就直接放过
+  if(!doc) return;
+  const body = doc.body ? (doc.body.innerText || '').trim() : '';
+  const title = (doc.title || '').trim();
+  const notFound = /^Cannot GET\b/i.test(body) || /^404\b/.test(body) ||
+                   /^404\b/.test(title) || (/not found/i.test(body) && body.length < 200);
+  // 内页自己发生了跳转（例如从简历索引点进某一份）时，在面包屑后面补出内页标题
+  let href = '';
+  try { href = frame.contentWindow.location.href; } catch(e){}
+  const ip = $('inPage');
+  const t = (doc.title || '').trim();
+  if(href && state.curUrl && href !== state.curUrl && t){
+    ip.textContent = '› ' + t;
+    ip.title = decodeURIComponent(href);
+    ip.hidden = false;
+  } else {
+    ip.hidden = true; ip.textContent = '';
+  }
+
+  if(notFound || (!body && !doc.querySelector('canvas,svg,img,iframe'))){
+    $('errDetail').innerHTML = '地址：<code>' + esc(shortPath(frame.src || currentUrl)) + '</code><br>' +
+      '文件可能被移动、改名，或该路径没有登记在只读白名单里。' +
+      '检查 <code>config/local/routes.json</code> 里的 <code>url</code>。';
+    $('err').classList.add('on');
+  }
+}
+frame.addEventListener('load', () => setTimeout(probeFrame, 40));
+
+/* ---------------- 配置 / 任务接口 ---------------- */
+async function loadSideStats(){
+  const [jf, led] = await Promise.all([
+    fetch('/api/job-families?t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).catch(() => null),
+    fetch('/api/ledger-index?limit=1&t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).catch(() => null)
+  ]);
+  const set = (id, v, ok) => {
+    const el = $(id);
+    el.textContent = ok ? v : '—';
+    el.classList.toggle('na', !ok);
+  };
+  set('ssFam', jf && jf.ok ? jf.totals.families : '', jf && jf.ok);
+  set('ssSample', jf && jf.ok ? jf.total : '', jf && jf.ok);
+  set('ssLedger', led && led.ok ? led.totals.lines : '', led && led.ok);
+}
+
+async function loadAll(){
+  try{
+    const r = await fetch('/api/routes?t=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    state.routes = j.routes || {groups:[],items:[]};
+  }catch(e){
+    $('nav').innerHTML = '<div class="empty">读不到 /api/routes。<br>确认本地服务（8787）在运行，' +
+      '再点右上角「↻ 刷新」。</div>';
+    $('footL').textContent = '接口不可用';
+    return;
+  }
+  try{
+    const r = await fetch('/api/config?t=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    state.cfg = j.config || {};
+    if(state.cfg.workbench_title){
+      $('title').textContent = state.cfg.workbench_title;
+      $('projName').textContent = state.cfg.workbench_title;
+      document.title = state.cfg.workbench_title;
+    }
+    $('wbInfo').innerHTML =
+      '<b>adapter</b>：'+esc(state.cfg.adapter || 'clipboard')+'<br>'+
+      '<b>输出根目录</b>：'+esc(state.cfg.output_root || 'workbuddy_out')+'<br>'+
+      '<b>模板目录</b>：'+esc(state.cfg.tasks_ref || 'templates/workbuddy/tasks')+'<br>'+
+      '<b>渠道</b>：'+esc((state.cfg.channels||[]).map(c => c.label).join(' / ') || '—')+'<br>'+
+      '<b>说明</b>：'+esc(state.cfg.ai_disabled_hint || '页面内 AI 已停用，请在 WorkBuddy 会话中执行分析');
+  }catch(e){ $('wbInfo').textContent = '配置不可用'; }
+
+  const items = state.routes.items || [];
+  if(!items.length){ renderNav(); return; }
+  // 直达参数：?open=<入口id>&view=<视图id>，优先于上次浏览记录（可做书签 / 分享）
+  const qs = new URLSearchParams(location.search);
+  const wantId = qs.get('open') || '';
+  const last = wantId || lsGet(LS.last);
+  const target = items.find(i => i.id === last) || items.find(i => i.role === 'link') || items[0];
+
+  state.current = target.id;
+  lsSet(LS.last, target.id);
+  renderNav();
+  openItem(target.id, qs.get('view') || '');
+  if(wantId){ try { history.replaceState(null, '', '/workbench'); } catch(e){} }
+}
+
+async function loadWorkbuddy(){
+  try{
+    const r = await fetch('/api/workbuddy/tasks?t=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    state.tasks = j.tasks || [];
+    $('taskList').innerHTML = state.tasks.length ? state.tasks.map(t =>
+      '<div class="tkcard"><b>'+esc(t.title)+'</b><span class="pill">'+esc(t.id)+'</span>'+
+      '<div class="mut">触发：'+esc(t.trigger || '—')+'</div>'+
+      '<div class="mut">输出：'+esc(t.output_path || '—')+'</div>'+
+      '<button class="copy" data-task="'+esc(t.id)+'">📋 复制此任务指令</button></div>').join('')
+      : '<div class="empty">暂无模板。</div>';
+    $('taskList').querySelectorAll('[data-task]').forEach(b =>
+      b.onclick = () => copyTask(b.getAttribute('data-task')));
+  }catch(e){ $('taskList').textContent = '任务模板接口不可用'; }
+  try{
+    const r = await fetch('/api/workbuddy/results?t=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    state.results = j;
+    const dirs = j.dirs || [], n = (j.totals||{}).files || 0;
+    const badge = $('btnTask').querySelector('.tk');
+    if(badge) badge.hidden = !n;
+    if(badge) badge.textContent = n;
+    $('resultList').innerHTML = '<div class="mut" style="margin-bottom:4px">共 '+n+' 个结果文件</div>' +
+      dirs.map(d => '<div class="resline">'+esc(d.key)+' <span class="mut">'+d.files.length+' 个</span>'+
+        (d.files.length ? '<div class="mut">'+d.files.slice(0,3).map(f=>esc(f.name)).join('、')+
+          (d.files.length>3?' …':'')+'</div>' : '')+'</div>').join('');
+  }catch(e){ $('resultList').textContent = '结果清单接口不可用'; }
+}
+
+/* ---------------- 复制 ---------------- */
+function copyText(text){
+  const done = () => toast('已复制，粘贴到 WorkBuddy 会话执行');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch(e){ toast('复制失败，请手动选中'); }
+  document.body.removeChild(ta);
+}
+function copyTask(id){
+  const t = state.tasks.find(x => x.id === id);
+  if(!t) return;
+  const root = state.cfg.output_root || 'workbuddy_out';
+  const out = String(t.output_path || '').replace(/\{\{output_root\}\}/g, root);
+  const lines = [
+    '请在 WorkBuddy 会话中执行「' + t.title + '」任务。',
+    '任务模板：' + t.path,
+    '提示词参考：' + (t.prompt_ref || '（无）'),
+    '输出路径：' + (out || '（见模板）'),
+    '',
+    '输入字段：' + (t.inputs || []).join('、'),
+    '输出结构：'
+  ];
+  (t.output_schema || []).forEach(s => lines.push('  - ' + s));
+  lines.push('', '请从本地事实源与工作台只读接口获取输入，占位符按实际记录填充。',
+    '硬约束：只依据本地事实源；不得编造经历、年限、薪资、业绩数字；信息不足直接写「信息不足」；只出草稿，不代发消息；不改动任何历史运行数据。');
+  copyText(lines.join('\n'));
+}
+
+/* ---------------- 状态 / 交互 ---------------- */
+async function checkHealth(){
+  try{
+    const r = await fetch('/health?t=' + Date.now(), {cache:'no-store'});
+    const ok = r.ok && (await r.json()).ok;
+    $('health').className = 'hdot ' + (ok ? 'ok' : 'bad');
+    $('health').title = ok ? '服务在线 · 每 30 秒检查一次' : '服务异常';
+  }catch(e){
+    $('health').className = 'hdot bad';
+    $('health').title = '服务未启动 · 运行 node server.js';
+  }
+}
+$('health').onclick = checkHealth;
+
+/* 侧栏开关 */
+function setSide(hide){
+  document.body.classList.toggle('noside', hide);
+  lsSet(LS.hidden, hide ? '1' : '0');
+}
+$('btnHide').onclick = () => setSide(true);
+$('btnShow').onclick = () => setSide(!document.body.classList.contains('noside'));
+
+$('btnReload').onclick = () => { if(frame.src){ try { frame.contentWindow.location.reload(); } catch(e){ frame.src = frame.src; } } };
+$('btnNewTab').onclick = () => { if(frame.src) window.open(frame.src, '_blank', 'noopener'); };
+
+/* 任务抽屉 */
+function setTask(open){
+  document.body.classList.toggle('taskopen', open);
+  $('taskPanel').setAttribute('aria-hidden', open ? 'false' : 'true');
+  $('btnTask').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+$('btnTask').onclick = () => setTask(!document.body.classList.contains('taskopen'));
+$('btnTaskClose').onclick = () => setTask(false);
+$('scrim').onclick = () => setTask(false);
+
+/* 流程说明 + 错误兜底按钮 */
+$('btnFlow').onclick = () => showFlow(itemById(state.current));
+$('errRetry').onclick = () => { $('err').classList.remove('on'); try { frame.contentWindow.location.reload(); } catch(e){ frame.src = currentUrl; } setLoading(true, '页面'); };
+$('errNewTab').onclick = () => window.open(currentUrl || frame.src, '_blank', 'noopener');
+$('errHome').onclick = () => { const h = (state.routes.items||[]).find(i => i.role === 'link'); if(h) openItem(h.id); };
+
+/* 视图条：点击 + 左右方向键 */
+$('vtabs').onclick = e => {
+  const b = e.target.closest('.vtab');
+  if(!b) return;
+  const it = itemById(state.current);
+  if(!it) return;
+  const v = viewsOf(it).find(x => x.id === b.dataset.v);
+  if(v) switchView(it, v);
+};
+$('vtabs').addEventListener('keydown', e => {
+  if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const tabs = [...$('vtabs').querySelectorAll('.vtab')];
+  const i = tabs.indexOf(document.activeElement);
+  if(i < 0) return;
+  e.preventDefault();
+  const j = (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  tabs[j].focus(); tabs[j].click();
+});
+
+$('btnCopyGeneral').onclick = () => {
+  const c = state.cfg;
+  copyText([
+    '请在 WorkBuddy 会话中执行求职工作流任务。',
+    '任务模板目录：' + (c.tasks_ref || 'templates/workbuddy/tasks'),
+    '输出根目录：' + (c.output_root || 'workbuddy_out'),
+    '只读接口：/api/ledger-index、/api/job-families、/api/workbuddy/tasks、/api/workbuddy/results',
+    '',
+    '约束：只依据本地事实源；不编造经历、数字与承诺；只出草稿不代发；不改动任何历史运行数据。'
+  ].join('\n'));
+};
+
+/* 搜索 */
+let qTimer = null;
+$('q').oninput = e => {
+  const v = e.target.value.trim();
+  $('btnClear').hidden = !v;
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => { state.q = v; renderNav(); }, 120);
+};
+$('btnClear').onclick = () => {
+  $('q').value = ''; state.q = ''; $('btnClear').hidden = true; renderNav(); $('q').focus();
+};
+
+/* 侧栏数据概况 → 回首页 */
+$('sstat').onclick = () => {
+  const h = (state.routes.items || []).find(i => i.role === 'link');
+  if(h) openItem(h.id);
+};
+
+/* 快捷键：/ 搜索，[ 侧栏，Esc 逐层关闭，R 刷新 */
+document.addEventListener('keydown', e => {
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  const typing = tag === 'INPUT' || tag === 'TEXTAREA';
+  if(e.key === '/' && !typing){ e.preventDefault(); $('q').focus(); return; }
+  if(e.key === '[' && !typing){ e.preventDefault(); setSide(!document.body.classList.contains('noside')); return; }
+  if(e.key === 'r' && !typing && !e.ctrlKey && !e.metaKey){ $('btnReload').click(); return; }
+  if(e.key === 'Escape'){
+    if(!$('stagePop').hidden){ $('stagePop').hidden = true; return; }
+    if(document.body.classList.contains('taskopen')){ setTask(false); return; }
+    if(typing){ $('q').value = ''; state.q = ''; $('btnClear').hidden = true; renderNav(); $('q').blur(); }
+  }
+});
+document.addEventListener('click', e => {
+  if(!$('stagePop').hidden && !e.target.closest('#stagePop') && !e.target.closest('#btnFlow')){
+    $('stagePop').hidden = true;
+  }
+});
+
+if(lsGet(LS.hidden) === '1') document.body.classList.add('noside');
+if(window.innerWidth <= 980) document.body.classList.add('noside');
+checkHealth(); setInterval(checkHealth, 30000);
+loadAll(); loadWorkbuddy(); loadSideStats();
+</script>
+</body></html>

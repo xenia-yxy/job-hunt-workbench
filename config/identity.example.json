@@ -1,0 +1,11 @@
+{
+  "schema": "identity/v1",
+  "_note": "身份占位骨架。真实值只放 config/local/identity.json（gitignored），或由 WorkBuddy 会话从本地事实源读取后注入任务模板。",
+  "name": "<YOUR_NAME>",
+  "graduation": "<YOUR_GRADUATION_YEAR>",
+  "school": "<YOUR_SCHOOL>",
+  "city": "<YOUR_CITY>",
+  "contact": "<YOUR_CONTACT>",
+  "greeting": "<YOUR_GREETING>",
+  "tech_stack": ["<TECH_1>", "<TECH_2>"]
+}

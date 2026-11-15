@@ -1,0 +1,25 @@
+{
+  "schema": "resume_versions/v1",
+  "_note": "通用骨架。groups[].versions[] 只记录相对路径与标签；真实文件清单由工作区实例的 config/local/resume_versions.json 提供。",
+  "source_ref_kind": "resume_version",
+  "groups": [
+    {
+      "id": "<GROUP_ID>",
+      "label": "<GROUP_LABEL>",
+      "dir": "<RELATIVE_DIR>",
+      "versions": [
+        { "id": "<VERSION_ID>", "label": "<VERSION_LABEL>", "file": "<FILE_NAME>", "printable": true }
+      ]
+    }
+  ],
+  "example_source_ref": {
+    "kind": "resume_version",
+    "group": "<GROUP_ID>",
+    "id": "<VERSION_ID>"
+  },
+  "constraints": {
+    "only_reorder": "只重排不编造：简历内容来自事实源，索引只记录路径与标签",
+    "no_backfill": "不为历史主表记录批量回填 source_refs",
+    "readonly": "本索引只读展示，不参与投递判定与概率计算"
+  }
+}

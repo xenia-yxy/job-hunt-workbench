@@ -1,0 +1,18 @@
+{
+  "schema": "conditions-template/v1",
+  "_note": "空白投递条件模板。字段契约见 config/conditions.example.json；复制后填入实例值，城市码必须显式给出。",
+  "id": "<CONDITION_ID>",
+  "queries": ["<QUERY>"],
+  "city": "<YOUR_CITY>",
+  "city_code": { "<PLATFORM>": "<CITY_CODE>" },
+  "filters": { "<PLATFORM>": { "<FILTER_LABEL>": "<FILTER_VALUE>" } },
+  "profile": {
+    "education": "<YOUR_EDUCATION>",
+    "exp_years": 0,
+    "exp_ceiling_years": 3,
+    "salary_floor": null,
+    "allow_intern": false,
+    "tech_stack": ["<TECH>"]
+  },
+  "deliver": { "min_grade": "B", "max": null, "daily_limit": 100 }
+}

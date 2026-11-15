@@ -1,0 +1,17 @@
+{
+  "schema": "workbuddy/v1",
+  "_note": "任务指令接口位。机制固定（剪贴板 + 相对输出路径 + 只读结果列举），内容全由配置与模板驱动。",
+  "adapter": "clipboard",
+  "adapter_slots": ["command", "webhook", "mcp"],
+  "output_root": "workbuddy_out",
+  "tasks_ref": "templates/workbuddy/tasks",
+  "ai_disabled_hint": "页面内 AI 已停用，请在 WorkBuddy 会话中执行分析（见工作台的任务指令面板）",
+  "result_dirs": {
+    "analysis": "analysis",
+    "outreach": "outreach",
+    "interview_prep": "interview_prep",
+    "effect_review": "effect_review",
+    "condition_drafts": "condition_drafts",
+    "ledger_index": "ledger_index"
+  }
+}

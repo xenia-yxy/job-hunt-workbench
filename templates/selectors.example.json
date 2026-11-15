@@ -1,0 +1,11 @@
+{
+  "schema": "selectors-notes/v1",
+  "_note": "仅说明结构。真实选择器、按钮文案、城市码表、登录地址属于平台知识，保留在各平台适配器目录，不进本文件、不进通用模板仓库。",
+  "adapter_layout": {
+    "selectors": "<path-to-platform-selectors.json>",
+    "scripts": ["cards.js", "panel.js", "liststate.js"],
+    "adapter_class": "<AdapterClassName>"
+  },
+  "required_methods": ["apply_filters", "classify_receipt"],
+  "rule": "新增平台 = 新增一个适配器目录，内核不动；未实测的定位方式一律标 unknown，不猜。"
+}
