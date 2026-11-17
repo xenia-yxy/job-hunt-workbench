@@ -1,6 +1,6 @@
 {
   "schema": "routes/v3",
-  "_note": "导航只描述「系统有什么功能」：首页 + 三段主流程。侧栏每段只渲染 item.role=primary 的那一项，其余产物写成该项的 variants。url 一律为项目根相对路径，由本地服务静态托管。想改自己链路的结构，复制到 config/local/routes.json 再改。",
+  "_note": "导航只描述「系统有什么功能」：首页 + 四段主流程。侧栏每段只渲染 item.role=primary 的那一项，其余产物写成该项的 variants。url 一律为项目根相对路径，由本地服务静态托管。想改自己链路的结构，复制到 config/local/routes.json 再改。",
   "groups": [
     {
       "id": "home",
@@ -8,7 +8,7 @@
       "order": 0,
       "kind": "link",
       "url": "工作台-首页.html",
-      "note": "三段进度、关键数据、从哪继续"
+      "note": "四步链路、下一步一件事、数据折叠在后面"
     },
     {
       "id": "profile",
@@ -48,11 +48,33 @@
       "url": "工作台-档案.html",
       "mode": "embed",
       "order": 0,
-      "note": "上传简历自动读属性；年龄/学历/届别/城市/技能/期望薪资；不记录姓名",
+      "note": "一页一模块：简历 / 我的情况 / 求职需求 / 需求分析，顶部视图条切换；不记姓名",
       "writable": true,
       "badge": "可写",
       "badge_kind": "write",
-      "variants": []
+      "variants": [
+        {
+          "id": "profile_identity",
+          "label": "我的情况",
+          "url": "工作台-档案.html?tab=identity",
+          "note": "年龄、学历、专业、届别、城市、年限、技术栈",
+          "badge": "属性"
+        },
+        {
+          "id": "profile_needs",
+          "label": "求职需求",
+          "url": "工作台-档案.html?tab=needs",
+          "note": "方向、薪资底线、地点、出差驻场加班意愿",
+          "badge": "需求"
+        },
+        {
+          "id": "profile_analysis",
+          "label": "需求分析",
+          "url": "工作台-档案.html?tab=analysis",
+          "note": "字段完备度与条件自洽检查",
+          "badge": "分析"
+        }
+      ]
     },
     {
       "id": "position_main",

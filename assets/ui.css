@@ -208,3 +208,111 @@ tbody td.name{ font-weight:500; color:#e5ebf5; }
 @media (max-width:1100px){
   .side{ width:236px; }
 }
+
+/* =============================================================
+   交互组件层（配合 assets/ui.js）
+   折叠卡 / 进度链 / 主任务卡 / 轻提示 / 卡底按钮组
+   -------------------------------------------------------------
+   约定（所有页面一致，别再各写一套）：
+   - 卡片次要内容：<section class="card" data-fold="closed">，头部右侧自动出「展开」
+   - 主操作永远在卡片底部 .acts 的最左边，次操作向右排；头部右侧只放折叠与说明
+   - 状态只用三种点：ok / warn / idle，颜色语义固定
+   ============================================================= */
+
+/* ---------- 折叠卡 ---------- */
+.card-h{ display:flex; align-items:center; gap:10px; flex-wrap:nowrap; }
+.card-h h2{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card[data-fold] > .card-h{ cursor:default; }
+.card[data-fold].is-closed > .card-b{ display:none; }
+.card[data-fold].is-closed > .card-h{ border-bottom-color:transparent; }
+.foldbtn{
+  margin-left:auto; flex-shrink:0;
+  border:1px solid transparent; background:transparent; color:var(--dim);
+  font:500 11.5px/1.5 inherit; padding:3px 9px; border-radius:7px; cursor:pointer;
+  transition:color .14s, border-color .14s, background .14s;
+}
+.foldbtn:hover{ color:var(--ink); border-color:var(--line2); background:var(--panel2); }
+.foldbtn::before{ content:"⌄"; display:inline-block; margin-right:4px; font-size:10px;
+  transform:translateY(-1px); transition:transform .16s; }
+.card.is-closed > .card-h .foldbtn::before{ transform:rotate(-90deg) translateY(0); }
+
+/* ---------- 通用大块折叠（details） ---------- */
+details.fold{
+  border:1px solid var(--line); border-radius:12px; background:var(--panel);
+  padding:0; margin-top:12px; overflow:hidden;
+}
+details.fold > summary{
+  list-style:none; cursor:pointer; padding:11px 15px; font-size:12.5px; color:var(--mut);
+  display:flex; align-items:center; gap:8px;
+}
+details.fold > summary::-webkit-details-marker{ display:none; }
+details.fold > summary::before{ content:"▸"; font-size:9px; color:#5f6a7a; transition:transform .15s; }
+details.fold[open] > summary::before{ transform:rotate(90deg); }
+details.fold > summary:hover{ color:var(--ink); }
+details.fold > .fold-b{ padding:12px 15px 15px; border-top:1px solid var(--line); }
+
+/* ---------- 状态点 ---------- */
+.sdot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; background:#4d5666; }
+.sdot.ok{ background:var(--ok); box-shadow:0 0 0 3px rgba(79,209,165,.13); }
+.sdot.warn{ background:var(--warn); box-shadow:0 0 0 3px rgba(242,191,104,.13); }
+.sdot.bad{ background:var(--bad); box-shadow:0 0 0 3px rgba(236,122,104,.13); }
+
+/* ---------- 首页：主任务卡 ---------- */
+.hero{
+  border:1px solid rgba(91,157,255,.26); border-radius:16px;
+  background:linear-gradient(180deg, rgba(91,157,255,.10), rgba(91,157,255,.02) 60%), var(--panel);
+  padding:18px 20px; display:flex; gap:18px; align-items:flex-start;
+}
+.hero .hbody{ flex:1; min-width:0; }
+.hero .kicker{ font-size:11px; letter-spacing:.08em; color:#8fb8ff; text-transform:uppercase;
+  display:flex; align-items:center; gap:7px; }
+.hero h2{ margin:6px 0 0; font-size:19px; line-height:1.45; letter-spacing:.2px; }
+.hero p{ margin:7px 0 0; font-size:12.5px; color:var(--mut); line-height:1.75; max-width:62ch; }
+.hero .hact{ flex-shrink:0; display:flex; flex-direction:column; gap:8px; align-items:stretch; min-width:132px; }
+.hero .hact .btn{ text-align:center; }
+
+/* ---------- 首页：链路行 ---------- */
+.chain{ display:flex; flex-direction:column; gap:8px; }
+.step{
+  display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+  border:1px solid var(--line); background:var(--panel); border-radius:12px;
+  padding:11px 14px; cursor:pointer; color:inherit; font-family:inherit;
+  transition:border-color .14s, background .14s, transform .06s;
+}
+.step:hover{ border-color:var(--line2); background:#171c24; }
+.step:active{ transform:translateY(.5px); }
+.step .sid{
+  flex-shrink:0; width:24px; height:24px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; font-size:11.5px; font-weight:700; color:#93a2b8;
+  border:1px solid var(--line2); background:rgba(255,255,255,.03);
+}
+.step.done .sid{ color:#9ef0cf; border-color:rgba(79,209,165,.42); background:rgba(79,209,165,.12); }
+.step.next .sid{ color:#0d1117; border-color:transparent; background:var(--accent); }
+.step .smain{ flex:1; min-width:0; }
+.step .sname{ font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.step .sval{ font-size:11.5px; color:var(--dim); margin-top:2px; line-height:1.6;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.step .sgo{ flex-shrink:0; font-size:11.5px; color:var(--dim); display:flex; align-items:center; gap:5px; }
+.step:hover .sgo{ color:var(--accent-2); }
+.step .sbadge{ font-size:10px; padding:1px 7px; border-radius:999px; border:1px solid var(--line2);
+  color:var(--mut); font-weight:500; }
+.step.next .sbadge{ color:#cfe2ff; border-color:rgba(91,157,255,.45); background:rgba(91,157,255,.14); }
+.step.done .sbadge{ color:#9ef0cf; border-color:rgba(79,209,165,.35); background:rgba(79,209,165,.1); }
+
+/* ---------- 紧凑数据格（首页折叠区里用） ---------- */
+.grid-kpi{ display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:10px; }
+.kv{ border:1px solid var(--line); border-radius:11px; background:var(--panel2); padding:10px 12px; }
+.kv .v{ font-size:17px; font-weight:700; line-height:1.3; font-variant-numeric:tabular-nums; }
+.kv .v.na{ color:#59616f; font-weight:500; font-size:15px; }
+.kv .k{ font-size:11px; color:var(--mut); margin-top:1px; }
+.kv .h{ font-size:10.5px; color:var(--dim); margin-top:2px; line-height:1.5; }
+
+/* ---------- 轻提示 ---------- */
+.wb-toast{
+  position:fixed; left:50%; bottom:24px; transform:translate(-50%,8px); z-index:99;
+  background:#20262f; border:1px solid var(--line2); color:var(--ink); border-radius:10px;
+  padding:9px 16px; font-size:12.5px; opacity:0; pointer-events:none;
+  transition:opacity .18s, transform .18s; box-shadow:0 14px 34px rgba(0,0,0,.5);
+  max-width:min(78vw,520px);
+}
+.wb-toast.on{ opacity:1; transform:translate(-50%,0); }

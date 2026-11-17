@@ -178,54 +178,42 @@ body.detail-mode .wrap{padding-top:14px}
 .whyline{margin-top:2px;font-size:10px;color:#7c8494;line-height:1.5;font-weight:400}
 select.tb{appearance:none;padding-right:16px;background-image:linear-gradient(45deg,transparent 50%,#8b93a3 50%),linear-gradient(135deg,#8b93a3 50%,transparent 50%);
   background-position:calc(100% - 9px) 50%,calc(100% - 5px) 50%;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+
+/* 分析输入：想法是本次参数，不落盘；按钮固定在输入行右侧 */
+.intentrow{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;
+  border:1px solid var(--line);background:var(--panel2);border-radius:11px;padding:10px 12px;margin-bottom:10px}
+.intentrow .ib{flex:1;min-width:220px;display:flex;flex-direction:column;gap:5px}
+.intentrow .ib b{font-size:11.5px;color:var(--mut);font-weight:600}
+.intentrow textarea{width:100%;font-size:12.5px;min-height:52px}
+.intentrow .iacts{display:flex;gap:8px;flex-shrink:0;align-items:center}
+.intentrow .iacts .btn{white-space:nowrap}
+#pSum{line-height:2}
 </style>
-<link rel="stylesheet" href="/assets/ui.css"></head>
+<link rel="stylesheet" href="/assets/ui.css">
+<script src="/assets/ui.js"></script></head>
 <body>
 <div class="wrap">
   <header>
     <div>
       <h1>岗位判断与分析</h1>
-      <p class="sub">先填一次画像，再看这些方向在我所在城市的市场上对我友不友好。
-        「市场友好度」是族级指标（这批岗位整体放宽到什么程度），不是你个人能打几分；
-        单条岗位能不能投，由投递段的 dry-run 决定。两者量纲不同，不要混着看。</p>
+      <p class="sub">读档案里的属性，给方向排序。「市场友好度」是族级指标（这批岗位整体放宽到什么程度），不是你个人能打几分；
+        单条岗位能不能投由投递段的试跑决定。</p>
     </div>
     <span class="ro" id="stamp">读取中…</span>
   </header>
 
-  <section class="card">
+  <!-- 画像在这里是只读消费方：唯一编辑入口是「我的档案」，避免两份表单互相打架 -->
+  <section class="card" data-fold="closed">
     <div class="card-h">
       <span class="ix">1</span>
       <h2>我的情况</h2>
       <span class="meta" id="pMeta">读取画像…</span>
-      <button class="tb" id="btnFold">收起</button>
     </div>
-    <div class="card-b" id="pBody">
-      <div class="grid">
-        <label><span>年龄</span><input id="fAge" type="number" min="14" max="70" placeholder="24"></label>
-        <label><span>学历</span><input id="fEdu" placeholder="本科"></label>
-        <label><span>专业</span><input id="fMajor" placeholder="软件工程"></label>
-        <label><span>届别</span><input id="fGrad" placeholder="2026"></label>
-        <label><span>城市</span><input id="fCity" placeholder="城市"></label>
-        <label><span>工作年限</span><input id="fYears" type="number" min="0" max="40" step="0.5" placeholder="0"></label>
-        <label><span>期望薪资</span><input id="fSalary" placeholder="7K 起"></label>
-        <label><span>备注</span><input id="fNotes" placeholder="可出差 / 驻场意愿等"></label>
-      </div>
-      <div class="row"><b>技术栈</b><div class="tags" id="fStack"><span class="tag">—</span></div></div>
-      <div class="row"><b>岗位想法</b><textarea id="fIntent" rows="2"
-        placeholder="例如：想投 IT 技术支持，偏稳定，能接受出差驻场"></textarea></div>
-      <div class="acts">
-        <button class="btn pri" id="btnSave">保存画像</button>
-        <button class="btn" id="btnAnalyze">开始分析</button>
-        <button class="btn" id="btnDeep" title="按岗位调研 SOP 交给 WorkBuddy 会话做真正的解读，结果回写到这里">交给 WorkBuddy 深析</button>
-        <a class="btn" href="工作台-档案.html" style="text-decoration:none">简历与完整档案 ↗</a>
-        <span class="warn">改画像会同时改变全部投递方向的筛选口径（每个方向都引用这一份）</span>
-        <span class="okmsg" id="saveMsg" hidden></span>
-      </div>
-      <div class="hint" id="anaMsg" style="margin-top:7px">「开始分析」是本地秒级打分（市场 × 技能 × 薪资 × 想法），先给基线；「交给 WorkBuddy 深析」按 SOP 由会话真正读数据、解读你的岗位想法，结果回写后会补到这里。</div>
-      <div class="deepbox" id="deepBox" hidden>
-        <div class="deep-h"><b>WorkBuddy 深度分析</b><span id="deepState">未提交</span></div>
-        <div class="deep-body" id="deepBody"></div>
-        <div class="deep-act" id="deepAct"></div>
+    <div class="card-b">
+      <div class="tags" id="pSum"><span class="tag">读取中…</span></div>
+      <div class="row" style="margin-top:12px">
+        <span class="hint" style="flex:1;min-width:180px">只读。属性在「我的档案」里维护（那里是唯一写入口），改完回来这里会自动重读。</span>
+        <button class="btn sm" id="btnEditProfile" type="button">去档案页编辑 ↗</button>
       </div>
     </div>
   </section>
@@ -241,7 +229,17 @@ select.tb{appearance:none;padding-right:16px;background-image:linear-gradient(45
       </select>
     </div>
     <div class="card-b" id="anaBody">
-      <div class="empty" id="anaEmpty">点上面「开始分析」，跑完这里出推荐：每个方向给综合分、技能命中率、缺口和结论。</div>
+      <!-- 想法是分析参数，不落盘；画像属性统一在档案页维护 -->
+      <div class="intentrow">
+        <label class="ib"><b>岗位想法</b><textarea id="fIntent" rows="2"
+          placeholder="例如：想投前端，偏稳定，能接受偶尔出差。只作为这次分析的参数，不写进档案。"></textarea></label>
+        <div class="iacts">
+          <button class="btn pri" id="btnAnalyze">开始分析</button>
+          <button class="btn" id="btnDeep" title="按岗位调研 SOP 交给 WorkBuddy 会话做真正的解读，结果回写到这里">交给 WorkBuddy 深析</button>
+        </div>
+      </div>
+      <div class="hint" id="anaMsg" style="margin-top:7px">本地秒级打分（市场 × 技能 × 薪资 × 想法）先给基线；深析交给 WorkBuddy 按 SOP 读数据，结果回写后会补到这里。</div>
+      <div class="empty" id="anaEmpty">点「开始分析」，跑完这里出推荐：每个方向给综合分、技能命中率、缺口和结论。</div>
       <div class="hint" id="anaAtlasHint" hidden>点任意一行，切到工作台内的详情视图看该族完整内容：门槛项、能力项、原文摘录、门槛分布、薪资发展、JD 原文与样本。</div>
       <div class="tw" id="anaWrap" hidden>
         <table>
@@ -259,17 +257,21 @@ select.tb{appearance:none;padding-right:16px;background-image:linear-gradient(45
         </table>
       </div>
       <div class="hint" id="anaFoot" style="margin-top:9px" hidden></div>
+      <div class="deepbox" id="deepBox" hidden>
+        <div class="deep-h"><b>WorkBuddy 深度分析</b><span id="deepState">未提交</span></div>
+        <div class="deep-body" id="deepBody"></div>
+        <div class="deep-act" id="deepAct"></div>
+      </div>
     </div>
   </section>
 
-  <section class="card" id="famCard">
+  <section class="card" id="famCard" data-fold="closed">
     <div class="card-h">
       <span class="ix">3</span>
       <h2>市场全景 · 全部方向</h2>
       <span class="meta" id="famMeta">读取中…</span>
-      <button class="tb" id="btnFam">展开</button>
     </div>
-    <div class="card-b hidden" id="famBody">
+    <div class="card-b" id="famBody">
       <div class="steps" id="steps"></div>
       <div class="tw">
         <table>
@@ -472,26 +474,23 @@ function renderProfile(){
   const nd = p.needs || {};
   const cp = p.conditions_profile || {};
   // 画像不记姓名：判断一个方向要不要投，用的是届别/学历/年限/城市这些属性
-  $('fAge').value = id.age != null ? id.age : '';
-  $('fEdu').value = id.education || cp.education || '';
-  $('fMajor').value = id.major || '';
-  $('fGrad').value = id.graduation || cp.graduation || '';
-  $('fCity').value = id.city || '';
-  $('fYears').value = id.work_years != null ? id.work_years : (cp.exp_years != null ? cp.exp_years : '');
-  $('fSalary').value = nd.salary_expect || id.salary_expect || '';
-  $('fNotes').value = nd.raw || id.notes || '';
-  $('fIntent').value = (p.intent||{}).raw || '';
-  const stack = ((p.conditions_profile||{}).tech_stack) || [];
-  $('fStack').innerHTML = stack.length
-    ? stack.map(t => '<span class="tag">' + esc(t) + '</span>').join('')
-    : '<span class="tag">未填技术栈</span>';
-  const n = stack.length;
-  $('pMeta').textContent = [
-    id.age ? id.age + ' 岁' : '',
-    id.graduation ? id.graduation + ' 届' : '',
-    id.education || '', id.city || '',
-    n ? n + ' 项技术栈' : ''
-  ].filter(Boolean).join(' · ') || '画像未填';
+  const stack = cp.tech_stack || id.tech_stack || [];
+  const cells = [
+    id.age ? id.age + ' 岁' : '', id.education || cp.education || '', id.major || '',
+    id.graduation || cp.graduation ? (id.graduation || cp.graduation) + ' 届' : '',
+    id.city || '', (id.work_years != null ? id.work_years : cp.exp_years) != null
+      ? ((id.work_years != null ? id.work_years : cp.exp_years) + ' 年经验') : '',
+    nd.salary_expect ? '期望 ' + nd.salary_expect : '',
+    nd.salary_floor ? '底线 ' + nd.salary_floor : '',
+    stack.length ? stack.length + ' 项技能' : ''
+  ].filter(Boolean);
+  $('pSum').innerHTML = cells.length
+    ? cells.map(x => '<span class="tag">' + esc(x) + '</span>').join('')
+    : '<span class="tag">档案还是空的 · 先去「我的档案」传简历或手填</span>';
+  $('fIntent').value = (p.intent||{}).raw || nd.raw || '';
+  $('pMeta').textContent = cells.length
+    ? cells.slice(0, 4).join(' · ') + (cells.length > 4 ? ' …' : '')
+    : '画像未填';
 }
 
 function renderSteps(fams){
@@ -618,60 +617,10 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && document.body.classList.contains('detail-mode')) closeDrawer();
 });
 
-/* 保存画像 */
-$('btnSave').onclick = async () => {
-  const btn = $('btnSave');
-  const age = $('fAge').value.trim(), years = $('fYears').value.trim();
-  const edu = $('fEdu').value.trim();
-  const patch = {
-    identity: {
-      age: age === '' ? null : Number(age),
-      education: edu,
-      major: $('fMajor').value.trim(),
-      graduation: $('fGrad').value.trim(),
-      city: $('fCity').value.trim(),
-      work_years: years === '' ? null : Number(years)
-    },
-    // 筛选口径读的是 conditions_profile，和 conditions/*.json 的 profile_ref 对齐
-    conditions_profile: {
-      education: edu,
-      graduation: $('fGrad').value.trim(),
-      exp_years: years === '' ? null : Number(years)
-    },
-    needs: {
-      salary_expect: $('fSalary').value.trim(),
-      raw: $('fNotes').value.trim()
-    },
-    intent: { raw: $('fIntent').value.trim() }
-  };
-  btn.disabled = true;
-  const j = await API('/api/profile', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(patch)
-  });
-  btn.disabled = false;
-  const msg = $('saveMsg');
-  msg.hidden = false;
-  if(j && j.ok){
-    S.profile = j.profile;
-    renderProfile();
-    msg.textContent = (j.created ? '已建档' : '已保存')
-      + (j.backup ? ' · 备份 ' + j.backup.split('/').pop() : '')
-      + ' · 下次开跑时全部方向生效';
-  } else {
-    msg.textContent = '保存失败：' + ((j && (j.hint || j.err)) || '接口不可用');
-    msg.style.color = 'var(--bad)';
-  }
-  setTimeout(() => { msg.hidden = true; msg.style.color = ''; }, 6000);
-};
-
-/* 折叠画像卡：填过一次就可以收起，把注意力留给方向判断 */
-$('btnFold').onclick = () => {
-  const b = $('pBody');
-  const hide = b.style.display !== 'none';
-  b.style.display = hide ? 'none' : '';
-  $('btnFold').textContent = hide ? '展开' : '收起';
+/* 画像只有档案页一个写入口；这里只读，跳转交给统一交互层（壳内保留返回栈） */
+$('btnEditProfile').onclick = () => {
+  if(window.WB && WB.go) WB.go('工作台-档案.html');
+  else location.href = '工作台-档案.html';
 };
 
 /* ---------------- 分析：点一次，跑一遍，出推荐 ---------------- */
@@ -900,13 +849,6 @@ async function loadDeep(){
     if(j.status === 'pending' || j.status === 'running') pollDeep(j.id);
   }
 }
-
-/* 市场全景折叠 */
-$('btnFam').onclick = () => {
-  const b = $('famBody');
-  b.classList.toggle('hidden');
-  $('btnFam').textContent = b.classList.contains('hidden') ? '展开' : '收起';
-};
 
 (async () => {
   const [pf, fams] = await Promise.all([API('/api/profile'), API('/api/families')]);

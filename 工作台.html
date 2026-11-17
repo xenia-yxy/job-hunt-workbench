@@ -72,15 +72,16 @@ body.noside .side{display:none}
 .navsep{height:1px;background:var(--line);margin:8px 9px 9px}
 .navgrp{font-size:9.5px;letter-spacing:.7px;color:#57606f;padding:3px 9px 5px;font-weight:600}
 
-/* 数据概况：把「服务状态 + 规模」从顶栏搬到这里，填掉侧栏中段的空白 */
-.sstat{margin:0 8px 8px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;
-  background:rgba(255,255,255,.024);display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;
+/* 数据概况：一行三项，点击回首页。以前是四格大字，和首页 KPI 重复 */
+.sstat{margin:0 8px 8px;padding:2px 10px;border:1px solid var(--line);border-radius:9px;
+  background:rgba(255,255,255,.02);display:flex;align-items:center;gap:10px;
   cursor:pointer;flex-shrink:0;transition:border-color .12s,background .12s}
 .sstat:hover{border-color:var(--line2);background:rgba(255,255,255,.04)}
-.sstat .v{font-size:13px;font-weight:600;color:#cfd7e3;font-variant-numeric:tabular-nums;line-height:1.3}
-.sstat .v.na{color:#59616f;font-weight:400}
-.sstat .k{font-size:9.5px;color:#69717f;line-height:1.4;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis}
+.sstat .sline{display:flex;align-items:baseline;gap:4px;min-width:0;flex:1}
+.sstat .sline:last-child{flex:0 0 auto}
+.sstat .k{font-size:10px;color:#69717f;white-space:nowrap}
+.sstat b{font-size:12px;font-weight:600;color:#cfd7e3;font-variant-numeric:tabular-nums}
+.sstat b.na{color:#59616f;font-weight:400}
 
 .side-foot{padding:7px 12px;border-top:1px solid var(--line);font-size:10px;color:#666e7d;
   flex-shrink:0;display:flex;justify-content:space-between;gap:8px;line-height:1.5}
@@ -95,7 +96,14 @@ body.noside .side{display:none}
 body.noside .top .proj{display:inline}
 .top .sp{flex:1}
 
-/* 面包屑：段名可点（回主视图），当前视图名加粗 */
+/* 返回：只在有历史时出现，固定在顶栏最左（☰ 之后），符合「返回在左」的直觉 */
+.backbtn{width:auto;padding:0 9px 0 7px;gap:5px;font-size:12px;border-color:var(--line);
+  background:var(--panel2);color:#c3ccdb}
+.backbtn:hover{color:#e3e9f2;border-color:var(--line2)}
+.backbtn[hidden]{display:none}
+.backbtn .ar{font-size:13px;line-height:1}
+
+/* 面包屑：首页 › 段名 › 视图，前两级可点 */
 .crumb{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:#8d97a6}
 .crumb .cl{border:0;background:transparent;color:#8d97a6;font:500 12px/1 inherit;font-family:inherit;
   padding:4px 6px;border-radius:6px;cursor:pointer;white-space:nowrap}
@@ -257,10 +265,9 @@ body.taskopen .scrim{opacity:1;pointer-events:auto}
     </div>
     <nav class="nav" id="nav"></nav>
     <div class="sstat" id="sstat" title="数据概况 · 点击回到首页">
-      <div><div class="v" id="ssFam">—</div><div class="k">在投 / 全量族</div></div>
-      <div><div class="v" id="ssSample">—</div><div class="k">有效样本</div></div>
-      <div><div class="v" id="ssLedger">—</div><div class="k">台账事件</div></div>
-      <div><div class="v" id="ssViews">—</div><div class="k">可打开视图</div></div>
+      <div class="sline"><span class="k">在投方向</span><b id="ssFam">—</b></div>
+      <div class="sline"><span class="k">台账</span><b id="ssLedger">—</b></div>
+      <div class="sline"><span class="k">样本</span><b id="ssSample">—</b></div>
     </div>
     <div class="side-foot"><span id="footL">—</span><span id="footR"></span></div>
   </aside>
@@ -268,7 +275,7 @@ body.taskopen .scrim{opacity:1;pointer-events:auto}
   <div class="main">
     <div class="top">
       <button class="iconbtn" id="btnShow" title="显示 / 隐藏侧栏（[）">☰</button>
-      <span class="proj" id="projName">求职工作台</span>
+      <button class="iconbtn backbtn" id="btnBack" title="返回上一页（Alt + ←）" hidden><span class="ar">←</span>返回</button>
       <nav class="crumb" id="crumb" aria-label="当前位置"></nav>
       <span class="c3" id="inPage" hidden></span>
       <span class="sp"></span>
@@ -332,7 +339,10 @@ const $ = id => document.getElementById(id);
 const frame = $('frame');
 const LS = {last:'wb.workbench.last', view:'wb.workbench.views', hidden:'wb.workbench.hidden'};
 const state = {routes:{groups:[],items:[],variants:0}, cfg:{}, tasks:[], results:null,
-               current:'', view:'', curUrl:'', q:'', loading:0};
+               current:'', view:'', curUrl:'', q:'', loading:0,
+               stack:[],          // 返回栈：每次换页压一个快照
+               dirty:{},          // 哪些页面因为数据变了需要重载
+               inPageTitle:''};
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -435,17 +445,21 @@ function renderNav(){
   });
 
   const nv = items.reduce((n, i) => n + viewsOf(i).length, 0);
-  $('footL').innerHTML = '<b>' + items.length + '</b> 个入口';
+  $('footL').innerHTML = '<b>' + items.length + '</b> 个入口 · <b>' + nv + '</b> 个视图';
   $('footR').textContent = q ? '筛出 ' + (links.length + flows.length) : '';
-  $('ssViews').textContent = nv;
-  $('ssViews').classList.remove('na');
 }
 
-/* ---------------- 面包屑 ---------------- */
+/* ---------------- 面包屑：首页 › 段名 › 视图 ---------------- */
+function homeItem(){ return (state.routes.items || []).find(i => i.role === 'link') || null; }
+
 function renderCrumb(it, v){
   const el = $('crumb');
   if(!it){ el.innerHTML = ''; return; }
-  if(it.role === 'link'){
+  const h = homeItem();
+  const onHome = h && it.id === h.id;
+  const homeBtn = '<button class="cl" id="crumbHome" title="回到首页">首页</button>';
+
+  if(onHome){
     el.innerHTML = '<span class="c1">首页</span>';
     return;
   }
@@ -453,14 +467,56 @@ function renderCrumb(it, v){
   const gLbl = (g && g.label) || it.label || it.id;
   const cur = (v && v.label) || it.label || '';
   const writable = it.writable === true || (v && v.badge_kind === 'write');
+  const showView = cur && cur !== gLbl;
   el.innerHTML =
-    '<button class="cl" id="crumbSeg" title="回到「' + esc(gLbl) + '」主视图">' + esc(gLbl) + '</button>' +
-    (cur && cur !== gLbl ? '<span class="cs">/</span><span class="c2" title="' +
-      esc(shortPath(v && v.url)) + '">' + esc(cur) + '</span>' : '') +
+    homeBtn + '<span class="cs">›</span>' +
+    (showView
+      ? '<button class="cl" id="crumbSeg" title="回到「' + esc(gLbl) + '」主视图">' + esc(gLbl) + '</button>' +
+        '<span class="cs">›</span><span class="c1">' + esc(cur) + '</span>'
+      : '<span class="c1">' + esc(gLbl) + '</span>') +
     (writable ? '<span class="cwt" title="这一页会写入本地数据（其它页面只读）">可写</span>' : '');
-  const b = $('crumbSeg');
-  if(b) b.onclick = () => switchView(it, mainViewOf(it));
+
+  const bh = $('crumbHome');
+  if(bh) bh.onclick = () => { const x = homeItem(); if(x) openItem(x.id); };
+  const bs = $('crumbSeg');
+  if(bs) bs.onclick = () => switchView(it, mainViewOf(it));
 }
+
+/* ---------------- 返回栈 ---------------- */
+function pushSnap(){
+  if(!state.curUrl) return;
+  state.stack.push({url:state.curUrl, item:state.current, view:state.view,
+                    title:state.inPageTitle || ''});
+  if(state.stack.length > 40) state.stack.shift();
+  updateBack();
+}
+function updateBack(){
+  const b = $('btnBack');
+  if(!b) return;
+  const n = state.stack.length;
+  b.hidden = n === 0;
+  b.title = n ? '返回上一页（Alt + ←）' : '';
+}
+function goBack(){
+  const s = state.stack.pop();
+  updateBack();
+  if(!s) return;
+  if(s.item && itemById(s.item)){
+    state.current = s.item;
+    lsSet(LS.last, s.item);
+    renderNav();
+    const it = itemById(s.item);
+    const vs = viewsOf(it);
+    const v = vs.find(x => x.id === s.view) || vs[0];
+    state.view = v.id;
+    renderCrumb(it, v);
+    renderViews(it);
+    loadFrame(s.url, {label: v.label || it.label});
+  } else {
+    loadFrame(s.url, {label: s.title || '页面'});
+  }
+}
+$('btnBack').onclick = goBack;
 
 /* ---------------- 视图条：该段产物的切换入口 ---------------- */
 function renderViews(it){
@@ -510,32 +566,44 @@ function setLoading(on, label){
   }
 }
 
-// 切换视图：只换 iframe 内容，不换导航段
-function switchView(it, v){
-  if(!it || !v) return;
-  state.view = v.id;
-  saveView(it.id, v.id);
-  const abs = absUrl(v.url);
+/* ---------------- 打开 / 载入内容 ---------------- */
+function loadFrame(url, opts){
+  opts = opts || {};
+  const abs = absUrl(url);
   $('err').classList.remove('on');
   $('stagePop').hidden = true;
-  renderCrumb(it, v);
-  renderViews(it);
-  if(frame.src === abs){
-    try { frame.contentWindow.location.reload(); } catch(e){ frame.src = abs; }
-    return;
-  }
-  setLoading(true, v.label || it.label || '页面');
-  currentUrl = abs;
-  state.curUrl = abs;
+  state.inPageTitle = '';
   $('inPage').hidden = true;
   $('inPage').textContent = '';
+  if(state.curUrl === abs && !opts.force){
+    try { frame.contentWindow.location.reload(); return; } catch(e){}
+  }
+  setLoading(true, opts.label || '页面');
+  currentUrl = abs;
+  state.curUrl = abs;
   frame.src = abs;
 }
 
+// 切换视图：只换 iframe 内容，不换导航段。opts.silent 表示调用方已经压过栈
+function switchView(it, v, opts){
+  opts = opts || {};
+  if(!it || !v) return;
+  const changed = (state.view !== v.id) || (state.curUrl !== absUrl(v.url));
+  if(changed && !opts.silent) pushSnap();
+  state.view = v.id;
+  saveView(it.id, v.id);
+  renderCrumb(it, v);
+  renderViews(it);
+  loadFrame(v.url, {label: v.label || it.label || '页面'});
+}
+
 // 打开某个入口：默认回到该入口上次看的视图，否则主视图
-function openItem(itemId, viewId){
+function openItem(itemId, viewId, opts){
+  opts = opts || {};
   const it = itemById(itemId);
   if(!it) return;
+  const changing = state.curUrl && state.current !== itemId;
+  if(changing && !opts.silent) pushSnap();
   state.current = itemId;
   lsSet(LS.last, itemId);
   if(!state.q) renderNav();
@@ -543,10 +611,17 @@ function openItem(itemId, viewId){
     x.classList.toggle('on', x.dataset.id === itemId));
   const views = viewsOf(it);
   const want = viewId || savedViews()[itemId];
-  switchView(it, views.find(v => v.id === want) || views[0]);
+  switchView(it, views.find(v => v.id === want) || views[0], {silent:true, force:opts.force});
 }
-// 供内页（首页卡片）调用：同源 iframe 内直接切段切视图，不必整页跳转
+
+// 内页里点链接（不在导航配置里的页面）：在当前内容区换页，但保留返回栈
+function frameGo(url, label){
+  pushSnap();
+  loadFrame(url, {label: label || '', force:true});
+}
+
 window.wbOpen = openItem;
+window.wbGo = frameGo;
 window.wbRoutes = () => state.routes;
 
 /* ---------------- iframe 兜底：加载后确认不是 404 / 空文档 ---------------- */
@@ -569,9 +644,13 @@ function probeFrame(){
     ip.textContent = '› ' + t;
     ip.title = decodeURIComponent(href);
     ip.hidden = false;
+    state.inPageTitle = t;
   } else {
     ip.hidden = true; ip.textContent = '';
+    state.inPageTitle = '';
   }
+
+  hookLinks(doc);
 
   if(notFound || (!body && !doc.querySelector('canvas,svg,img,iframe'))){
     $('errDetail').innerHTML = '地址：<code>' + esc(shortPath(frame.src || currentUrl)) + '</code><br>' +
@@ -581,6 +660,52 @@ function probeFrame(){
   }
 }
 frame.addEventListener('load', () => setTimeout(probeFrame, 40));
+
+/* 内页链接：在壳内换页（不整页跳走），并压栈，返回按钮能回。
+   ui.js 接入过的页面自己会 postMessage(wb:go)，这里只兜没有 ui.js 的页面。 */
+function hookLinks(doc){
+  try{
+    const w = doc.defaultView;
+    if(w && w.WB && typeof w.WB.go === 'function') return;   // 交给 ui.js
+    if(doc.__wbHooked) return;
+    doc.__wbHooked = 1;
+    doc.addEventListener('click', e => {
+      const a = e.target.closest ? e.target.closest('a[href]') : null;
+      if(!a) return;
+      const href = a.getAttribute('href') || '';
+      if(!href || href.charAt(0) === '#' || /^(https?:|mailto:|javascript:)/i.test(href)) return;
+      if(a.target === '_blank' || a.hasAttribute('download')) return;
+      e.preventDefault();
+      let abs = href;
+      try { abs = new URL(href, w.location.href).href; } catch(err) {}
+      const item = (state.routes.items || []).find(it =>
+        viewsOf(it).some(v => absUrl(v.url) === abs));
+      if(item) openItem(item.id);
+      else frameGo(abs, (a.textContent || '').trim().slice(0, 20));
+    }, true);
+  }catch(e){}
+}
+
+/* 内页 → 壳层：跳转请求 + 数据变更 */
+window.addEventListener('message', ev => {
+  const d = ev.data || {};
+  if(!d || typeof d.type !== 'string') return;
+  if(d.type === 'wb:go' && d.url){
+    let abs = d.url;
+    try { abs = new URL(d.url, state.curUrl || location.origin + '/').href; } catch(e){}
+    const item = (state.routes.items || []).find(it => viewsOf(it).some(v => absUrl(v.url) === abs));
+    if(item){ openItem(item.id); return; }
+    frameGo(abs, '页面');
+    return;
+  }
+  if(d.type === 'wb:changed'){
+    loadSideStats();                       // 侧栏数字跟着变
+    const cur = itemById(state.current);
+    const onHome = cur && cur.role === 'link';
+    if(!onHome) toast('已保存 · 首页与后续判断会读到新数据');
+    else { try { frame.contentWindow.location.reload(); } catch(e){} }
+  }
+});
 
 /* ---------------- 配置 / 任务接口 ---------------- */
 async function loadSideStats(){
@@ -593,11 +718,12 @@ async function loadSideStats(){
   ]);
   const set = (id, v, ok) => {
     const el = $(id);
+    if(!el) return;
     el.textContent = ok ? v : '—';
     el.classList.toggle('na', !ok);
   };
   const t = (fam && fam.ok && fam.totals) || {};
-  set('ssFam', t.active != null ? (t.active + ' / ' + t.all) : '', fam && fam.ok);
+  set('ssFam', t.active != null ? (t.active + '/' + t.all) : '', fam && fam.ok);
   set('ssSample', jf && jf.ok ? jf.total : '', jf && jf.ok);
   set('ssLedger', led && led.ok ? led.totals.lines : '', led && led.ok);
 }
@@ -619,7 +745,6 @@ async function loadAll(){
     state.cfg = j.config || {};
     if(state.cfg.workbench_title){
       $('title').textContent = state.cfg.workbench_title;
-      $('projName').textContent = state.cfg.workbench_title;
       document.title = state.cfg.workbench_title;
     }
     $('wbInfo').innerHTML =
@@ -632,17 +757,22 @@ async function loadAll(){
 
   const items = state.routes.items || [];
   if(!items.length){ renderNav(); return; }
-  // 直达参数：?open=<入口id>&view=<视图id>，优先于上次浏览记录（可做书签 / 分享）
+  // 落地固定首页：不从「上次浏览」恢复，避免一打开就停在半路。
+  // 需要深链时用 ?open=<入口id>&view=<视图id>（可做书签）。
   const qs = new URLSearchParams(location.search);
   const wantId = qs.get('open') || '';
-  const last = wantId || lsGet(LS.last);
-  const target = items.find(i => i.id === last) || items.find(i => i.role === 'link') || items[0];
+  const target = (wantId && items.find(i => i.id === wantId))
+    || items.find(i => i.role === 'link') || items[0];
 
   state.current = target.id;
-  lsSet(LS.last, target.id);
   renderNav();
-  openItem(target.id, qs.get('view') || '');
-  if(wantId){ try { history.replaceState(null, '', '/workbench'); } catch(e){} }
+  openItem(target.id, qs.get('view') || '', {silent:true});
+  // 深链直接打开内页时，栈里补一个首页快照，保证「返回」始终可用
+  if(target.role !== 'link'){
+    const h = items.find(i => i.role === 'link');
+    if(h) state.stack.push({url:absUrl(h.url), item:h.id, view:'', title:'首页'});
+  }
+  updateBack();
 }
 
 async function loadWorkbuddy(){
@@ -872,10 +1002,11 @@ $('sstat').onclick = () => {
   if(h) openItem(h.id);
 };
 
-/* 快捷键：/ 搜索，[ 侧栏，Esc 逐层关闭，R 刷新 */
+/* 快捷键：/ 搜索，[ 侧栏，Alt+← 返回，Esc 逐层关闭，R 刷新 */
 document.addEventListener('keydown', e => {
   const tag = (document.activeElement && document.activeElement.tagName) || '';
   const typing = tag === 'INPUT' || tag === 'TEXTAREA';
+  if(e.altKey && e.key === 'ArrowLeft'){ e.preventDefault(); goBack(); return; }
   if(e.key === '/' && !typing){ e.preventDefault(); $('q').focus(); return; }
   if(e.key === '[' && !typing){ e.preventDefault(); setSide(!document.body.classList.contains('noside')); return; }
   if(e.key === 'r' && !typing && !e.ctrlKey && !e.metaKey){ $('btnReload').click(); return; }

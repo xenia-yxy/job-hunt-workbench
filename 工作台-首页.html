@@ -1,249 +1,367 @@
 <!doctype html>
 <html lang="zh-CN" data-theme="dark"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>工作台 · 总览</title>
+<title>工作台 · 数据总览</title>
 <style>
 :root{
-  --bg:#14161a;--panel:#1c1f26;--panel2:#232731;--line:#2e333e;--line2:#39404d;
-  --ink:#e8ebf1;--mut:#8b93a3;--dim:#6f7889;--accent:#7aa8ff;--ok:#5fd39a;--warn:#f0be5f;
+  --bg:#0f1116;--panel:#171b22;--panel2:#1d222b;--line:#262d39;--line2:#343d4d;
+  --ink:#e9edf4;--mut:#98a3b4;--dim:#6f7a8b;--accent:#5b9dff;--accent2:#8fb8ff;
+  --ok:#4fd1a5;--warn:#f2bf68;--bad:#ec7a68;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font:13px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  font:13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
 button{font-family:inherit}
-.wrap{margin:0 auto;padding:20px 18px 48px}
-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:4px}
-.hl{min-width:0}
-h1{margin:0;font-size:18px;letter-spacing:.2px;line-height:1.4}
-.sub{margin:5px 0 0;font-size:11.5px;color:var(--mut);line-height:1.7;max-width:760px}
-.hr{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
-.ro{border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-size:10.5px;
-  color:var(--mut);white-space:nowrap}
-.upd{font-size:10.5px;color:var(--dim);white-space:nowrap}
-.upd b{color:#8fb3e8;font-weight:500}
+.wrap{max-width:1340px;margin:0 auto;padding:20px 22px 60px}
 
-.sec-h{display:flex;align-items:baseline;gap:8px;margin:20px 0 9px}
-.sec-h h2{margin:0;font-size:12.5px;font-weight:600;letter-spacing:.3px;color:#c7cfdc}
-.sec-h span{font-size:10.5px;color:var(--dim)}
+/* ---------- 页头 ---------- */
+header.top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px}
+header.top .ht{flex:1;min-width:0}
+header.top h1{margin:0;font-size:21px;letter-spacing:.3px;line-height:1.35}
+header.top .sub{margin:4px 0 0;font-size:11.5px;color:var(--mut);line-height:1.7;
+  overflow-wrap:anywhere;word-break:break-word}
+.ro{flex-shrink:0;display:flex;align-items:center;gap:7px;border:1px solid var(--line);
+  border-radius:999px;padding:3px 11px;font-size:10.5px;color:var(--mut);white-space:nowrap}
+.ro i{width:6px;height:6px;border-radius:50%;background:var(--ok)}
 
-/* KPI：一行五格，数字最大，标签次之，注释最轻 */
-.kpis{display:flex;flex-wrap:wrap;gap:9px}
-.kpi{flex:1 1 132px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
-  padding:10px 12px;min-width:0}
-.kpi .v{font-size:20px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums;
-  letter-spacing:-.2px}
-.kpi .v.na{color:#5b6472;font-size:16px;font-weight:500}
-.kpi .l{font-size:11px;color:#9aa3b3;margin-top:2px}
-.kpi .h{font-size:10px;color:var(--dim);margin-top:0;line-height:1.5}
+/* ---------- 通用卡 ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;
+  box-shadow:0 1px 2px rgba(0,0,0,.3);overflow:hidden;min-width:0}
+.card-h{display:flex;align-items:center;gap:9px;padding:11px 15px;border-bottom:1px solid var(--line)}
+.card-h h2{margin:0;font-size:13px;font-weight:600;white-space:nowrap}
+.card-h .meta{font-size:11px;color:var(--dim);min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.card-h .sp{flex:1}
+.card-b{padding:14px 15px}
+.card-h .foldbtn{margin-left:auto}
 
-/* 流程卡片：flex 换行，第一行整行铺满，不留空洞（段数由 routes.json 决定） */
-.flow{display:flex;flex-wrap:wrap;gap:11px}
-.stage{flex:1 1 268px;min-width:0;max-width:100%;background:var(--panel);border:1px solid var(--line);
-  border-radius:11px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;
-  transition:border-color .14s,background .14s}
-.stage:hover{border-color:var(--line2);background:#1e222a}
-.stage.empty{border-style:dashed}
-.sh{display:flex;align-items:center;gap:8px;min-width:0}
-.sh .idx{flex-shrink:0;width:19px;height:19px;border-radius:50%;border:1px solid rgba(122,168,255,.4);
-  color:#a9c7ff;font-size:11px;font-weight:600;display:flex;align-items:center;
-  justify-content:center;line-height:1}
-.sh .sn{flex:1;min-width:0}
-.sh .sn b{display:block;font-size:13px;font-weight:600;line-height:1.45}
-.sh .sn i{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  overflow:hidden;font-size:10.5px;color:var(--dim);font-style:normal;line-height:1.45;margin-top:1px}
-.sh .n{flex-shrink:0;font-size:9.5px;color:#7d8798;background:rgba(255,255,255,.055);
-  border-radius:20px;padding:1px 7px;font-variant-numeric:tabular-nums}
+/* ---------- KPI 方块 ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:10px;margin-bottom:14px}
+.kpi{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+  padding:12px 14px 11px;overflow:hidden;min-width:0}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--line2)}
+.kpi.c-blue::before{background:var(--accent)}.kpi.c-green::before{background:var(--ok)}
+.kpi.c-amber::before{background:var(--warn)}.kpi.c-red::before{background:var(--bad)}
+.kpi .k{font-size:10.5px;color:var(--mut);letter-spacing:.02em;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font-size:23px;font-weight:700;line-height:1.3;margin-top:2px;font-variant-numeric:tabular-nums;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v.na{color:#5c6575;font-weight:500;font-size:18px}
+.kpi .h{font-size:10.5px;color:var(--dim);margin-top:1px;line-height:1.5;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.chips{display:flex;flex-wrap:wrap;gap:5px}
-.chip{border:1px solid var(--line);background:var(--panel2);color:#b6c0cf;border-radius:6px;
-  padding:3px 8px;font-size:11px;cursor:pointer;line-height:1.5;display:inline-flex;
-  align-items:center;gap:4px;max-width:100%;transition:border-color .12s,color .12s}
-.chip:hover{border-color:rgba(122,168,255,.5);color:#dbe8ff}
-.chip .cb{font-size:9px;color:#6f7889}
-.chip.pri{color:#d6e5ff;border-color:rgba(122,168,255,.34);background:rgba(122,168,255,.10)}
-.chip.more{color:#8b95a4;border-style:dashed;cursor:default}
-.chip.more:hover{border-color:var(--line2);color:#a8b2c2}
+/* ---------- 图表区 ---------- */
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:14px}
+.chart{min-height:210px}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:grid;grid-template-columns:96px minmax(0,1fr) 44px;gap:9px;align-items:center;font-size:11.5px}
+.bar .bl{color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .bt{height:8px;background:rgba(255,255,255,.045);border-radius:99px;overflow:hidden}
+.bar .bf{height:100%;border-radius:99px;background:var(--accent);min-width:0;transition:width .3s}
+.bar .bv{text-align:right;font-variant-numeric:tabular-nums;color:#c7d1e0}
+.bar.g .bf{background:var(--ok)}.bar.a .bf{background:var(--warn)}
+.bar.r .bf{background:var(--bad)}.bar.b .bf{background:#a78bfa}
+.donutrow{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.donut{width:112px;height:112px;border-radius:50%;flex-shrink:0;position:relative;
+  background:rgba(255,255,255,.05)}
+.donut::after{content:"";position:absolute;inset:19px;border-radius:50%;background:var(--panel)}
+.donut .dc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;z-index:1;pointer-events:none}
+.donut .dc b{font-size:19px;line-height:1.2;font-variant-numeric:tabular-nums}
+.donut .dc small{font-size:10px;color:var(--dim)}
+.legend{display:flex;flex-direction:column;gap:7px;flex:1;min-width:120px}
+.lg{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--mut)}
+.lg i{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.lg b{margin-left:auto;color:#ccd5e2;font-variant-numeric:tabular-nums}
+.chartempty{font-size:11.5px;color:var(--dim);line-height:1.8;padding:26px 4px;text-align:center}
+.spark{display:flex;align-items:flex-end;gap:4px;height:56px;margin-top:12px}
+.spark .sbar{flex:1;min-width:5px;background:rgba(91,157,255,.65);border-radius:3px 3px 0 0}
+.spark .sl{font-size:10px;color:var(--dim);text-align:center;margin-top:4px}
 
-.io{display:flex;gap:6px;align-items:baseline;font-size:10.5px;color:var(--dim);line-height:1.6}
-.io b{color:#828d9f;font-weight:600;flex-shrink:0;font-size:10px}
-.io span{flex:1;min-width:0}
-.next{margin-top:auto;padding:7px 0 0 9px;border-top:1px dashed var(--line);font-size:10.5px;
-  color:#8794a8;line-height:1.6;position:relative}
-.next::before{content:"";position:absolute;left:0;top:9px;bottom:1px;width:2px;border-radius:2px;
-  background:rgba(122,168,255,.42)}
-.next b{color:#9dc0ff;font-weight:600;margin-right:5px;font-size:10px}
+/* ---------- 表格 ---------- */
+table.tb{width:100%;border-collapse:collapse;font-size:11.5px}
+table.tb th{text-align:left;color:var(--mut);font-weight:600;font-size:10.5px;
+  padding:8px 9px;border-bottom:1px solid var(--line);white-space:nowrap;background:rgba(255,255,255,.015)}
+table.tb td{padding:9px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;
+  overflow-wrap:anywhere}
+table.tb tr:last-child td{border-bottom:0}
+table.tb tr{cursor:pointer}
+table.tb tr:hover td{background:rgba(91,157,255,.05)}
+.badge{display:inline-block;border:1px solid var(--line2);border-radius:999px;padding:1px 8px;
+  font-size:10.5px;color:var(--mut);white-space:nowrap}
+.badge.red{color:#ffbcaf;border-color:rgba(236,122,104,.4);background:rgba(236,122,104,.1)}
+.badge.green{color:#9ef0cf;border-color:rgba(79,209,165,.35);background:rgba(79,209,165,.1)}
+.badge.amber{color:#ffdca8;border-color:rgba(242,191,104,.35);background:rgba(242,191,104,.1)}
+.badge.blue{color:#bcd7ff;border-color:rgba(91,157,255,.38);background:rgba(91,157,255,.1)}
+.btn{border:1px solid var(--line2);background:var(--panel2);color:#c8d2e2;border-radius:8px;
+  padding:5px 11px;font-size:11.5px;cursor:pointer}
+.btn:hover{border-color:#46516a;color:#eef2f8}
 
-/* 口径说明：默认收起，不抢内容 */
-@media(max-width:1120px){ .stage{flex-basis:calc(50% - 5px)} }
-@media(max-width:720px){ .stage{flex-basis:100%} }
+/* ---------- 链路（压成一条） ---------- */
+.chain{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+.step{display:flex;align-items:center;gap:9px;text-align:left;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel2);padding:9px 11px;cursor:pointer;color:inherit;
+  font-family:inherit;min-width:0}
+.step:hover{border-color:var(--line2)}
+.step .sid{flex-shrink:0;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:10.5px;font-weight:700;color:#93a2b8;border:1px solid var(--line2)}
+.step.done .sid{color:#9ef0cf;border-color:rgba(79,209,165,.42);background:rgba(79,209,165,.12)}
+.step.next .sid{color:#0d1117;border-color:transparent;background:var(--accent)}
+.step .smain{flex:1;min-width:0}
+.step .sname{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step .sval{font-size:10.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4d5666;margin-right:5px}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}
 
-.meta{margin-top:20px;border-top:1px solid var(--line);padding-top:10px;
-  font-size:10.5px;color:var(--dim);line-height:1.9}
-.meta summary{cursor:pointer;color:#8b95a4;font-size:11px;list-style:none;
-  display:inline-flex;align-items:center;gap:5px;padding:2px 0}
-.meta summary::-webkit-details-marker{display:none}
-.meta summary::before{content:"▸";font-size:8px;color:#5f6a7a;transition:transform .15s}
-.meta[open] summary::before{transform:rotate(90deg)}
-.meta summary:hover{color:#c3ccdb}
-.meta .mb{margin-top:6px}
-.meta code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;
+.foot{font-size:10.5px;color:var(--dim);line-height:1.9;overflow-wrap:anywhere}
+.foot code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;
   padding:0 4px;font-size:10px;color:#a8b2c2}
+details.fold{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin-top:14px}
+details.fold>summary{list-style:none;cursor:pointer;padding:10px 15px;font-size:11.5px;color:var(--mut)}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"▸";font-size:9px;margin-right:7px;color:#5f6a7a}
+details.fold[open]>summary::before{content:"▾"}
+details.fold>.fold-b{padding:2px 15px 14px;border-top:1px solid var(--line)}
+@media(max-width:760px){.chart{min-height:0}.kpi .v{font-size:20px}}
 </style>
-<link rel="stylesheet" href="/assets/ui.css"></head>
+<link rel="stylesheet" href="/assets/ui.css">
+<script src="/assets/ui.js"></script>
+</head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="hl">
-      <h1>总览</h1>
-      <p class="sub">一条链路：我的档案 → 岗位判断与分析 → 投递 → 跟踪回复。
-        档案里放简历与个人情况（只关系到判断的属性，不记姓名），后面每段都引用它；
-        每段的报告、版本、快照都在段内切换，本页只汇总状态。</p>
+  <header class="top">
+    <div class="ht">
+      <h1>数据总览</h1>
+      <p class="sub" id="sub">从档案、投递事件和跟踪台账汇总。所有数字来自本地文件或只读接口，取不到就显示「—」，不补零、不猜。</p>
     </div>
-    <div class="hr">
-      <span class="ro">只读 · 不改数据</span>
-      <span class="upd" id="upd"></span>
-    </div>
+    <span class="ro"><i></i><span id="snap">读取中…</span></span>
   </header>
 
-  <div class="sec-h"><h2>当前数据</h2><span id="kpiHint">读取中…</span></div>
-  <section class="kpis" id="kpis"></section>
+  <!-- ① 方块：关键数字常驻首屏 -->
+  <div class="kpis" id="kpis" aria-label="关键指标"></div>
 
-  <div class="sec-h"><h2>流程</h2><span>点按钮直接进入对应页面</span></div>
-  <section class="flow" id="flow"></section>
+  <!-- ② 图表区 -->
+  <div class="charts">
+    <section class="card chart">
+      <div class="card-h"><h2>流程漏斗</h2><span class="meta">档案 → 方向 → 条件 → 投递 → 沟通</span></div>
+      <div class="card-b"><div class="bars" id="chartFunnel"></div></div>
+    </section>
+    <section class="card chart">
+      <div class="card-h"><h2>投递结果</h2><span class="meta" id="outMeta">来自投递事件流</span></div>
+      <div class="card-b" id="chartOutcome"></div>
+    </section>
+    <section class="card chart">
+      <div class="card-h"><h2>跟踪状态</h2><span class="meta" id="trackMeta">来自招聘台账</span></div>
+      <div class="card-b"><div class="bars" id="chartTrack"></div></div>
+    </section>
+  </div>
 
-  <details class="meta">
-    <summary>数据口径与配置</summary>
-    <div class="mb" id="foot">正在读取接口…</div>
+  <!-- ③ 明细表 -->
+  <section class="card">
+    <div class="card-h">
+      <h2>跟踪明细</h2>
+      <span class="meta" id="tblMeta">读取中…</span>
+      <span class="sp"></span>
+      <button class="foldbtn" id="tblMore" type="button">看全部</button>
+    </div>
+    <div class="card-b" style="padding:0;overflow-x:auto">
+      <table class="tb">
+        <thead><tr><th>来源</th><th>公司</th><th>岗位</th><th>状态</th><th>阶段</th><th>薪资</th><th>该做的事</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ④ 四步链路：收在下面，主视图让给数据 -->
+  <section class="card" data-fold="closed" style="margin-top:14px">
+    <div class="card-h"><h2>四步链路</h2><span class="meta">点任意一步进入；灰点未开始 / 黄点进行中 / 绿点已完成</span></div>
+    <div class="card-b"><div class="chain" id="chain"></div></div>
+  </section>
+
+  <details class="fold">
+    <summary>数字怎么来的 · 数据口径</summary>
+    <div class="fold-b"><div class="foot" id="foot"></div></div>
   </details>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const has = v => v !== null && v !== undefined && v !== '';
+const nz = v => (v === 0 || v) ? v : null;
 
-function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c =>
-  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function API(p){
-  try {
-    const r = await fetch(p + (p.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now(), {cache:'no-store'});
-    return await r.json();
-  } catch(e){ return null; }
+  try { const r = await fetch(p + (p.indexOf('?')>=0?'&':'?') + 't=' + Date.now(), {cache:'no-store'});
+        return await r.json(); } catch(e){ return null; }
 }
-function viewsOf(it){
-  const out = [{id:it.id, label:it.label||it.id, url:it.url, note:it.note||'',
-                badge:it.badge||'', source:'primary'}];
-  for(const v of (it.variants||[])) if(v && v.url) out.push(v);
-  return out;
-}
-// 首页在 iframe 里：优先让壳层切页（保留导航态），否则整页跳转
+/* 首页在 iframe 里：优先让壳层切页，保留导航与返回栈 */
 function go(itemId, viewId){
   const p = window.parent;
-  if(p && p !== window && typeof p.wbOpen === 'function'){ p.wbOpen(itemId, viewId); return; }
-  const b = document.querySelector('.chip[data-item="' + itemId + '"][data-view="' + viewId + '"]');
-  if(b){ location.href = b.dataset.url; }
+  if(p && p !== window && typeof p.wbOpen === 'function'){ p.wbOpen(itemId, viewId || ''); return; }
+  const b = document.querySelector('[data-item="'+itemId+'"]');
+  if(b && b.dataset.url) location.href = b.dataset.url;
 }
-function kpi(v, label, hint){
-  const na = (v === null || v === undefined || v === '');
-  return '<div class="kpi"><div class="v' + (na ? ' na' : '') + '">' + esc(na ? '—' : v) +
-    '</div><div class="l">' + esc(label) + '</div>' +
-    (hint ? '<div class="h">' + esc(hint) + '</div>' : '') + '</div>';
+function barRow(label, value, max, cls){
+  const pct = max > 0 ? Math.round(value / max * 100) : 0;
+  return '<div class="bar ' + (cls||'') + '"><span class="bl" title="' + esc(label) + '">' + esc(label) +
+    '</span><span class="bt"><span class="bf" style="width:' + pct + '%"></span></span>' +
+    '<span class="bv">' + value + '</span></div>';
 }
-function parseFlow(flow){
-  const o = {input:'', output:'', next:''};
-  String(flow || '').split('｜').forEach(seg => {
-    const m = /^([^：:]{2,6})[：:]\s*(.*)$/.exec(seg.trim());
-    if(!m) return;
-    if(m[1].indexOf('输入') >= 0) o.input = m[2];
-    else if(m[1].indexOf('输出') >= 0) o.output = m[2];
-    else if(m[1].indexOf('下一步') >= 0) o.next = m[2];
-  });
-  return o;
+function kpi(label, val, hint, color){
+  const na = !has(val);
+  return '<div class="kpi ' + (color||'') + '"><div class="k">' + esc(label) + '</div>' +
+    '<div class="v' + (na?' na':'') + '">' + esc(na ? '—' : val) + '</div>' +
+    '<div class="h">' + esc(hint || '') + '</div></div>';
 }
 
 (async () => {
-  const [routes, jf, ledger, fams] = await Promise.all([
-    API('/api/routes'), API('/api/job-families'), API('/api/ledger-index?limit=1'),
-    API('/api/families')
+  const [routes, profile, resumes, conds, ledger, appData, interacts] = await Promise.all([
+    API('/api/routes'), API('/api/profile'), API('/api/resume/list'), API('/api/conditions'),
+    API('/api/ledger-index?limit=400'), API('/api/data'), API('/api/interactions')
   ]);
 
   const R = (routes && routes.routes) || {groups:[], items:[]};
-  const items = (R.items || []).slice().sort((a,b) => (a.order||0) - (b.order||0));
-  const groups = R.groups || [];
-  const flows = items.filter(i => i.role !== 'link');
+  const items = (R.items || []).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+  const byGroup = gid => items.find(i => i.group === gid && i.role !== 'link') || {};
+  const ID = { profile:byGroup('profile').id, position:byGroup('position').id,
+               deliver:byGroup('deliver').id, track:byGroup('track').id };
 
-  // ---- 关键数据：全部来自只读接口，取不到就是「—」，不猜
-  const jfOk  = jf && jf.ok;
-  const drOk  = jfOk && jf.directions && jf.directions.ok && jf.directions.totals
-    && jf.directions.totals.jobs > 0;
-  const dr    = drOk ? jf.directions : null;
-  const ledOk = ledger && ledger.ok;
-  const nViews = items.reduce((n, i) => n + viewsOf(i).length, 0);
-  const famsOk = fams && fams.ok;
-  const nActive = famsOk ? ((fams.totals || {}).active || 0) : null;
-  const nAll = famsOk ? ((fams.totals || {}).all || 0) : null;
+  /* ---------- 真实状态 ---------- */
+  const P = (profile && profile.ok && profile.profile) || null;
+  const id = (P && P.identity) || {}, nd = (P && P.needs) || {};
+  const ATTRS = [['年龄',id.age],['学历',id.education],['专业',id.major],
+                 ['届别',id.graduation],['城市',id.city],['工作年限',id.work_years]];
+  const filled = ATTRS.filter(a => has(a[1])).length;
+  const resumeN = (resumes && resumes.ok) ? ((resumes.count != null ? resumes.count
+                    : (resumes.items || []).length)) : null;
+  const nCond = (conds && conds.ok) ? (conds.conditions || []).length : null;
+  const LT = (ledger && ledger.ok && ledger.totals) || null;
+  const events = (ledger && ledger.ok && ledger.events) || [];
+  const nSent = LT ? LT.delivered : null;
+  const D = (appData && appData.ok && appData.data) || {};
+  const rows = [].concat(
+    (D.campus||[]).map(r => Object.assign({_src:'校招'}, r)),
+    (D.boss||[]).map(r => Object.assign({_src:'BOSS'}, r)),
+    (D.zhilian||[]).map(r => Object.assign({_src:'智联'}, r))
+  );
+  const nTrack = rows.length;
+  const nReply = rows.filter(r => /待我回复|待回复|需要回复/.test(r.status||'')).length;
+  const nWait  = rows.filter(r => /等对方|等待对方/.test(r.status||'')).length;
+  const nTalk  = rows.filter(r => /沟通中|面试/.test(r.status||'') || /沟通|面试/.test(r.stage||'')).length;
+  const nInteract = (interacts && interacts.ok) ? (interacts.total||0) : 0;
 
+  const mt = (ledger && ledger.source_mtime_max) || '';
+  $('snap').textContent = mt ? ('数据快照 ' + mt.slice(0,16).replace('T',' ')) : '本地数据';
+
+  /* ---------- ① KPI 方块 ---------- */
   $('kpis').innerHTML = [
-    kpi(nActive, '在投方向', nAll ? ('全量 ' + nAll + ' 族已跑通匹配') : '未接入契约'),
-    kpi(drOk ? (dr.totals.roles || dr.totals.jobs) : null, '扩展方向',
-        drOk ? ((dr.totals.jobs || 0) + ' 个在招岗位 · 网络调研') : '未接入'),
-    kpi(jfOk ? jf.total : null, '有效样本',
-        jfOk && jf.total_open != null ? ('在招 ' + jf.total_open) : '采集去重后'),
-    kpi(ledOk ? ledger.totals.lines : null, '台账事件', 'append-only'),
-    kpi(ledOk ? ledger.totals.delivered : null, '已投递', '有 delivery 记录'),
-    kpi(nViews || null, '可打开视图', items.length + ' 个入口')
+    kpi('档案属性', has(filled) ? (filled + ' / 6') : null,
+        resumeN ? (resumeN + ' 份简历') : '还没传简历', 'c-blue'),
+    kpi('投递方向', nz(nCond), '已配置的筛选条件套数', 'c-green'),
+    kpi('台账事件', nz(LT && LT.lines), LT ? ('解析 ' + LT.parsed + ' · 异常 ' + LT.bad_lines) : '事件流未接入'),
+    kpi('已投递', nz(nSent), '有 delivered 记录', 'c-green'),
+    kpi('跟踪记录', nz(nTrack), rows.length ? (nReply + ' 条待我回复') : '台账为空', nReply ? 'c-red' : ''),
+    kpi('沟通记录', nz(nInteract), '有来有回才算沟通', nInteract ? 'c-blue' : '')
   ].join('');
-  $('kpiHint').textContent = jfOk ? ('数据源 ' + (jf.source || '—') +
-    (drOk ? ' ＋ ' + dr.source : '')) : '部分数据源未接入';
 
-  // ---- 流程卡片：段数来自 routes.json，第一行铺满、其余自动撑满整行
-  $('flow').innerHTML = flows.map(it => {
-    const g = groups.find(x => x.id === it.group) || {};
-    const vs = viewsOf(it);
-    const io = parseFlow(g.flow);
-    const MAXC = 3;
-    // 主视图的 badge 常与自己的名字重复（「岗位族定制简历 · 岗位族」），重复就不显示
-    const norm = x => String(x || '').replace(/\s+/g, '');
-    const badgeOf = v => (v.badge && norm(v.label).indexOf(norm(v.badge)) < 0)
-      ? '<span class="cb">' + esc(v.badge) + '</span>' : '';
-    const chips = vs.slice(0, MAXC).map((v, i) =>
-      '<button class="chip' + (i === 0 ? ' pri' : '') + '" data-item="' + esc(it.id) + '"' +
-      ' data-view="' + esc(v.id) + '" data-url="' + esc(v.url) + '"' +
-      ' title="' + esc((v.note || v.url) + (v.source === 'scan' ? '（自动发现）' : '')) + '">' +
-      esc(v.label) + badgeOf(v) + '</button>'
-    ).join('') + (vs.length > MAXC
-      ? '<span class="chip more" title="其余 ' + (vs.length - MAXC) + ' 个在段内视图条里">+' +
-        (vs.length - MAXC) + ' 个</span>' : '');
-    return '<article class="stage">' +
-      '<div class="sh"><span class="idx">' + esc(g.index || '·') + '</span>' +
-        '<div class="sn"><b>' + esc(g.label || it.label) + '</b>' +
-        '<i>' + esc(io.output || it.note || '') + '</i></div>' +
-        '<span class="n" title="该段可切换的视图数">' + vs.length + '</span></div>' +
-      '<div class="chips">' + chips + '</div>' +
-      (io.input ? '<div class="io"><b>输入</b><span>' + esc(io.input) + '</span></div>' : '') +
-      (io.next ? '<div class="next"><b>下一步</b>' + esc(io.next) + '</div>' : '') +
-    '</article>';
-  }).join('') || '<div class="kpi">导航配置为空：检查 <code>config/local/routes.json</code></div>';
+  /* ---------- ② 图表 ---------- */
+  const funnel = [
+    ['档案', resumeN ? 1 : (filled ? 1 : 0)],
+    ['方向', nCond ? 1 : 0],
+    ['条件', nCond || 0],
+    ['投递', nSent || 0],
+    ['沟通', nInteract || rows.length ? 1 : 0]
+  ];
+  const fmax = Math.max(1, ...funnel.map(x=>x[1]));
+  $('chartFunnel').innerHTML = funnel.map((x,i) =>
+    barRow(x[0], x[1], fmax, ['','b','a','g','blue'][i] || '')).join('') +
+    '<div style="font-size:10.5px;color:var(--dim);margin-top:9px">' +
+    '看的是「有没有走通」，不是数量比大小；断在哪一步，点下面四步链路进入对应环节。</div>';
 
-  // ---- 最近更新：放到页头右侧，底部只留口径说明
-  let latest = '', latestAt = 0;
-  items.forEach(it => viewsOf(it).forEach(v => {
-    if(v.mtime){ const t = Date.parse(v.mtime) || 0; if(t > latestAt){ latestAt = t; latest = v.label; } }
-  }));
-  if(latest){
-    $('upd').innerHTML = '最近更新 <b>' + esc(latest) + '</b> · ' +
-      esc(new Date(latestAt).toLocaleDateString('zh-CN'));
-    $('upd').title = new Date(latestAt).toLocaleString('zh-CN');
+  const OC = (LT && LT.outcomes) || {};
+  const ocRows = [['已投出',OC.delivered||0,'#4fd1a5'],['跳过',OC.skipped||0,'#f2bf68'],
+                  ['试跑',OC.dry_run||0,'#5b9dff']];
+  const ocTotal = ocRows.reduce((n,x)=>n+x[1],0);
+  if(ocTotal){
+    let acc = 0;
+    const seg = ocRows.map(x => {
+      const a = acc, b = acc + x[1]/ocTotal*100; acc = b;
+      return x[2] + ' ' + a.toFixed(1) + '% ' + b.toFixed(1) + '%';
+    }).join(',');
+    $('chartOutcome').innerHTML =
+      '<div class="donutrow"><div class="donut" style="background:conic-gradient(' + seg + ')">' +
+        '<div class="dc"><b>' + ocTotal + '</b><small>条事件</small></div></div>' +
+        '<div class="legend">' + ocRows.map(x =>
+          '<div class="lg"><i style="background:' + x[2] + '"></i>' + esc(x[0]) +
+          '<b>' + x[1] + '</b></div>').join('') + '</div></div>';
+    $('outMeta').textContent = '共 ' + (LT.lines||0) + ' 行';
+  } else {
+    $('chartOutcome').innerHTML = '<div class="chartempty">还没有投递事件。<br>配好条件并试跑后，这里会显示投出 / 跳过 / 试跑的占比。</div>';
+    $('outMeta').textContent = '暂无数据';
   }
 
-  $('foot').innerHTML =
-    '<div>岗位族与样本来自 <code>' + esc(jfOk ? (jf.source || '—') : '未配置') + '</code>' +
-    '，台账事件来自 <code>runs/*/ledger.jsonl</code>。所有页面只读，写入只发生在主应用（导航里标「可写」的那一页）。</div>' +
-    '<div>入口与视图由 <code>config/local/routes.json</code> + <code>app.json</code> 的 ' +
-    '<code>artifact_scans</code> 合成：新增简历版本或图谱快照会自动出现在对应段落，不用改页面代码。</div>';
+  const st = [['待我回复',nReply,'r'],['沟通中',nTalk,'g'],['等对方',nWait,'a'],['已投递',rows.length-nReply-nTalk-nWait,'']];
+  const stMax = Math.max(1, ...st.map(x=>x[1]));
+  $('chartTrack').innerHTML = rows.length
+    ? st.map(x => barRow(x[0], x[1], stMax, x[2])).join('') +
+      '<div style="font-size:10.5px;color:var(--dim);margin-top:9px">' +
+      '「待我回复」是有明确下一步的，优先处理；「等对方」超过三天可低成本放弃。</div>'
+    : '<div class="chartempty">跟踪台账还没有记录。<br>投出去的岗位进这里之后，状态分布会自动出现。</div>';
+  $('trackMeta').textContent = rows.length ? (rows.length + ' 条') : '暂无数据';
 
+  /* ---------- ④ 明细表 ---------- */
+  const NEXT = {'待我回复':'24h 内回复','待回复':'24h 内回复','等对方':'3 天无回应可放弃',
+    '沟通中':'约具体可面时间','已投递':'等简历筛选'};
+  const badge = s => {
+    const c = /待我回复|待回复/.test(s) ? 'red' : /沟通中|面试/.test(s) ? 'green'
+            : /等对方/.test(s) ? 'amber' : 'blue';
+    return '<span class="badge ' + c + '">' + esc(s || '未标') + '</span>';
+  };
+  $('tbody').innerHTML = rows.length ? rows.map(r =>
+    '<tr data-item="' + esc(ID.track||'') + '"><td>' + esc(r._src) + '</td>' +
+    '<td>' + esc(r.company || '—') + '</td><td>' + esc(r.role || '—') + '</td>' +
+    '<td>' + badge(r.status) + '</td><td>' + esc(r.stage || '—') + '</td>' +
+    '<td>' + esc(r.salary || '—') + '</td><td>' +
+    esc(NEXT[r.status] || (r.next || '查看记录')) + '</td></tr>').join('')
+    : '<tr><td colspan="7" style="color:var(--dim);text-align:center;padding:22px">' +
+      '还没有跟踪记录。数据只来自本地台账，示例记录不会当成真实投递。</td></tr>';
+  $('tblMeta').textContent = rows.length ? ('共 ' + rows.length + ' 条 · 点行进跟踪页') : '暂无记录';
+  $('tblMore').textContent = rows.length > 8 ? '看全部 ' + rows.length + ' 条' : '进入跟踪';
+  $('tblMore').dataset.item = ID.track || '';
+
+  /* ---------- ⑤ 四步链路 ---------- */
+  const s1 = (!resumeN && !filled) ? 'idle' : (filled >= 5 && resumeN) ? 'done' : 'doing';
+  const s2 = nCond ? 'done' : ((nd.target_roles||[]).length ? 'doing' : 'idle');
+  const s3 = (nCond && LT && LT.lines) ? 'done' : (nCond ? 'doing' : 'idle');
+  const s4 = !nCond ? 'idle' : (nInteract ? 'done' : (nSent ? 'doing' : 'idle'));
+  const steps = [
+    {k:'profile', ix:'01', n:'我的档案', s:s1, v: filled ? (filled+'/6 项属性'+(resumeN?' · '+resumeN+' 份简历':'')) : '还没填'},
+    {k:'position',ix:'02', n:'岗位判断与分析', s:s2, v: nCond ? (nCond+' 套条件已定') : '还没选方向'},
+    {k:'deliver', ix:'03', n:'投递', s:s3, v: LT ? (LT.delivered+' 已投 · '+LT.lines+' 条事件') : '还没有投递记录'},
+    {k:'track',   ix:'04', n:'跟踪与回复', s:s4, v: nTrack ? (nTrack+' 条跟踪 · '+nReply+' 待回复') : '还没有跟踪记录'}
+  ];
+  const DOT = {done:'ok', doing:'warn', idle:''};
+  $('chain').innerHTML = steps.map((s,i) => {
+    const nextOne = steps.findIndex(x=>x.s!=='done') === i;
+    return '<button class="step ' + s.s + (nextOne?' next':'') + '" data-item="' +
+      esc(ID[s.k]||'') + '"><span class="sid">' + (s.s==='done'?'✓':s.ix) + '</span>' +
+      '<span class="smain"><span class="sname"><span class="dot ' + DOT[s.s] + '"></span>' +
+      esc(s.n) + '</span><span class="sval">' + esc(s.v) + '</span></span></button>';
+  }).join('');
+
+  $('foot').innerHTML =
+    '<div>KPI 方块：档案读 <code>config/local/profile.json</code>（不含姓名）与 <code>/api/resume/list</code>；' +
+    '条件读 <code>config/local/conditions/</code>；投递读 <code>runs/*/ledger.jsonl</code>；' +
+    '跟踪读主应用台账 <code>/api/data</code> 与 <code>/api/interactions</code>。</div>' +
+    '<div>图表是只读聚合：漏斗看链路是否走通，投递结果来自事件 outcome，跟踪状态来自台账 status。' +
+    '「等对方」超过三天的判定口径在跟踪页执行，这里只给提示。</div>' +
+    '<div>本页只读。写入只发生在标「可写」的页面：我的档案、招聘跟踪。</div>';
+
+  /* ---------- 事件 ---------- */
   document.addEventListener('click', e => {
-    const b = e.target.closest('.chip');
-    if(!b || !b.dataset.view) return;
-    go(b.dataset.item, b.dataset.view);
+    const b = e.target.closest('[data-item]');
+    if(b && b.dataset.item) go(b.dataset.item, b.dataset.view);
   });
 })();
 </script>

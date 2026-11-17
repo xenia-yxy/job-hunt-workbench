@@ -70,7 +70,7 @@ TEMPLATE_GLOBS = [
     'inbox_bridge.js', 'pipe_bridge.js', 'pipe_client.js',
     'app/*.js', 'app/*.html', 'data_store.js', 'ledger_import.js',
     # 档案：画像唯一写入口 + 简历上传/解析（不含任何个人信息，姓名不提取）
-    'profile_store.js', 'resume_api.js', '工作台-档案.html', 'assets/*.css',
+    'profile_store.js', 'resume_api.js', '工作台-档案.html', 'assets/*.css', 'assets/*.js',
     # 开箱即跑所需：一键初始化、构建入口、npm 脚本、启动脚本、目录说明
     'package.json', 'tools/setup.py', 'tools/build.js', '启动服务.bat',
     'tests/*.js', 'tests/*.py',

@@ -24,7 +24,10 @@ header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7
 .state.off i{background:var(--bad)}
 
 /* 两列：宽的留给简历，窄的放画像与需求 */
-.cols{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start}
+/* 三列栅格：展开的卡整行铺开，收起的卡三张并排。
+   这样默认首屏只有「简历」一大块 + 三根摘要条，不会留下半屏空洞。 */
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.cols > .card:not(.is-closed){grid-column:1 / -1}
 @media (max-width:1000px){.cols{grid-template-columns:minmax(0,1fr)}}
 .col{display:flex;flex-direction:column;gap:14px;min-width:0}
 .full{grid-column:1/-1}
@@ -106,6 +109,7 @@ header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7
   border-radius:7px;padding:5px 9px;font-size:12px;outline:none}
 
 .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+.acts .msg{margin-left:auto;text-align:right}
 .btn{border:1px solid var(--line2);background:var(--panel2);color:#c8d2e2;border-radius:9px;
   padding:7px 14px;font-size:13px;cursor:pointer;transition:border-color .14s,background .14s,color .14s}
 .btn:hover{border-color:#46516a;background:#222833;color:#eef2f8}
@@ -148,23 +152,65 @@ header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7
   margin:8px 0 0;max-height:220px;overflow:auto;line-height:1.65}
 .hide{display:none!important}
 .empty{color:var(--dim);font-size:12.5px;text-align:center;padding:18px 10px}
+
+/* =========================================================
+   档案页：一页一模块（嵌在壳里用顶部视图条切换）
+   ========================================================= */
+header.top .ht{flex:1;min-width:0}
+header.top .sub{max-width:none;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+.modnav{display:none;gap:4px;border:1px solid var(--line);background:var(--panel);
+  border-radius:11px;padding:4px;margin-bottom:14px;flex-wrap:wrap}
+html.standalone .modnav{display:flex}
+.modnav button{border:0;background:transparent;color:var(--mut);border-radius:7px;
+  padding:6px 13px;font-size:12px;cursor:pointer;font-family:inherit}
+.modnav button:hover{background:rgba(255,255,255,.05);color:var(--ink)}
+.modnav button.on{background:rgba(91,157,255,.16);color:#cfe2ff;font-weight:600}
+.mods{display:block}
+.mod{display:none}
+html[data-tab="resume"] .mod[data-mod="resume"],
+html[data-tab="identity"] .mod[data-mod="identity"],
+html[data-tab="needs"] .mod[data-mod="needs"],
+html[data-tab="analysis"] .mod[data-mod="analysis"]{display:block}
+.card-h .meta{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5}
+.ptable table{table-layout:auto}
+.ptable th,.ptable td{white-space:normal;overflow-wrap:anywhere}
+.note{overflow-wrap:anywhere}
+.card-b{min-width:0}
+@media(max-width:720px){.wrap{padding:16px 13px 50px}}
 </style>
+<script>
+(function(){
+  var tab = new URLSearchParams(location.search).get('tab') || 'resume';
+  if(!/^(resume|identity|needs|analysis)$/.test(tab)) tab = 'resume';
+  document.documentElement.dataset.tab = tab;
+  try{ document.documentElement.classList.add(window.parent !== window ? 'embedded' : 'standalone'); }
+  catch(e){ document.documentElement.classList.add('standalone'); }
+})();
+</script>
 <link rel="stylesheet" href="/assets/ui.css">
+<script src="/assets/ui.js"></script>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <div>
-      <h1>我的档案</h1>
-      <p class="sub">简历只用来「读属性」：年龄、学历、专业、届别、城市、技能、期望薪资，用来和岗位对表。
-        姓名、电话、邮箱一律不提取、不入库——判断一个岗位要不要投，用不上这些。</p>
+    <div class="ht">
+      <h1 id="pgTitle">我的档案</h1>
+      <p class="sub" id="pgSub"></p>
     </div>
     <span class="state" id="conn"><i></i><span>读取中…</span></span>
   </header>
 
-  <div class="cols">
+  <!-- 独立打开页面时的模块切换；嵌在壳里时用顶栏的视图条，不重复出现两套导航 -->
+  <nav class="modnav" id="modnav" aria-label="档案模块">
+    <button data-tab="resume">简历</button>
+    <button data-tab="identity">我的情况</button>
+    <button data-tab="needs">求职需求</button>
+    <button data-tab="analysis">需求分析</button>
+  </nav>
+
+  <div class="mods">
     <!-- ① 简历 -->
-    <section class="card">
+    <section class="card mod" data-mod="resume">
       <div class="card-h">
         <span class="n">1</span>
         <h2>简历</h2>
@@ -194,8 +240,7 @@ header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7
         <div class="ptable hide" id="pbox">
           <table>
             <thead><tr>
-              <th style="width:34px"></th><th style="width:96px">字段</th>
-              <th style="width:150px">提取值</th><th>原文依据</th>
+              <th></th><th>字段</th><th>提取值</th><th>原文依据</th>
             </tr></thead>
             <tbody id="prows"></tbody>
           </table>
@@ -217,7 +262,7 @@ header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7
     </section>
 
     <!-- ② 我的情况 -->
-    <section class="card">
+    <section class="card mod" data-mod="identity">
       <div class="card-h">
         <span class="n">2</span>
         <h2>我的情况</h2>
@@ -263,7 +308,7 @@ header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7
     </section>
 
     <!-- ③ 求职需求 -->
-    <section class="card">
+    <section class="card mod" data-mod="needs">
       <div class="card-h">
         <span class="n">3</span>
         <h2>求职需求</h2>
@@ -308,7 +353,7 @@ header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7
 
 
     <!-- ④ 需求分析 -->
-    <section class="card">
+    <section class="card mod" data-mod="analysis">
       <div class="card-h">
         <span class="n">4</span>
         <h2>需求分析</h2>
@@ -342,6 +387,28 @@ header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7
 </div>
 
 <script>
+/* 一次只显示一个模块：壳内由视图条切 URL，独立打开时由本页 modnav 切 */
+const MOD_META = {
+  resume:{t:'简历', s:'上传或粘贴简历，自动抽取可用字段。每条结果都带原文依据，你核对后才写入档案；不提取姓名、电话、邮箱。'},
+  identity:{t:'我的情况', s:'年龄、学历、专业、届别、城市、工作年限、到岗时间与技术栈。判断岗位只用这些属性，档案里不记姓名。'},
+  needs:{t:'求职需求', s:'期望方向、薪资与底线、地点与出差驻场加班意愿。投递筛选会直接引用这些条件，写清楚才能判得准。'},
+  analysis:{t:'需求分析', s:'检查条件是否自洽：缺哪些字段会让投递判不了、薪资是否打架、届别与年限是否矛盾、方向与技能覆盖差多少。'}
+};
+(function(){
+  const tab = document.documentElement.dataset.tab || 'resume';
+  const m = MOD_META[tab] || MOD_META.resume;
+  document.getElementById('pgTitle').textContent = '我的档案 · ' + m.t;
+  document.getElementById('pgSub').textContent = m.s;
+  document.title = '我的档案 · ' + m.t;
+  document.querySelectorAll('#modnav button').forEach(b =>
+    b.classList.toggle('on', b.dataset.tab === tab));
+  document.getElementById('modnav').addEventListener('click', e => {
+    const b = e.target.closest('button[data-tab]');
+    if(!b) return;
+    location.href = location.pathname + '?tab=' + b.dataset.tab;
+  });
+})();
+
 const API = (p, o) => fetch(p, o).then(r => r.json()).catch(() => ({ ok:false, err:'接口不可用' }));
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>

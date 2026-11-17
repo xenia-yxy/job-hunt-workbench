@@ -147,7 +147,8 @@ details.lg summary:hover{color:#b6c0cf}
 .okmsg{font-size:10.5px;color:var(--ok)}
 .badmsg{font-size:10.5px;color:var(--bad)}
 </style>
-<link rel="stylesheet" href="/assets/ui.css"></head><body>
+<link rel="stylesheet" href="/assets/ui.css">
+<script src="/assets/ui.js"></script></head><body>
 <div class="wrap">
 
 <header>
@@ -164,17 +165,17 @@ details.lg summary:hover{color:#b6c0cf}
 
 <div class="cols">
   <div>
-    <section class="card">
+    <section class="card" data-fold="open">
       <div class="card-h"><span class="lv">L0</span><h2>平台原生筛选</h2>
-        <span class="meta">在搜索页先点一次筛选项，减少无效卡片</span>
-        <button class="tb" id="saveL0">保存筛选</button></div>
-      <div class="card-b" id="l0"></div>
+        <span class="meta">在搜索页先点一次筛选项，减少无效卡片</span></div>
+      <div class="card-b"><div id="l0"></div>
+        <div class="acts"><button class="btn pri" id="saveL0">保存筛选</button></div>
+      </div>
     </section>
 
-    <section class="card">
+    <section class="card" data-fold="closed">
       <div class="card-h"><span class="lv">L1</span><h2>搜索词</h2>
-        <span class="meta" id="l1meta"></span>
-        <button class="tb" id="saveQ">保存搜索词</button></div>
+        <span class="meta" id="l1meta"></span></div>
       <div class="card-b">
         <div class="tags" id="l1"></div>
         <div class="addq">
@@ -182,6 +183,7 @@ details.lg summary:hover{color:#b6c0cf}
           <button class="tb" id="qadd">加</button>
         </div>
         <div class="hint" style="margin-top:8px">每个词翻 <b id="pgq">2</b> 页。词越多覆盖越广，也越容易被同质岗位刷屏。</div>
+        <div class="acts"><button class="btn pri" id="saveQ">保存搜索词</button></div>
       </div>
     </section>
 
@@ -192,16 +194,15 @@ details.lg summary:hover{color:#b6c0cf}
       <div class="card-b hidden" id="l2"></div>
     </section>
 
-    <section class="card">
+    <section class="card" data-fold="closed">
       <div class="card-h"><span class="lv">L3</span><h2>方向词表</h2>
         <span class="meta" id="l3meta"></span></div>
       <div class="card-b" id="l3"></div>
     </section>
 
-    <section class="card">
+    <section class="card" data-fold="closed">
       <div class="card-h"><span class="lv">L4</span><h2>投出控制</h2>
-        <span class="meta">试跑可选 · 改完可直接投</span>
-        <button class="tb" id="saveL4">保存</button></div>
+        <span class="meta">试跑可选 · 改完可直接投</span></div>
       <div class="card-b">
         <div class="grid">
           <label><span>薪资下限（元/月）</span><input id="f_salary" type="number" min="0" step="500"></label>
@@ -213,8 +214,9 @@ details.lg summary:hover{color:#b6c0cf}
         </div>
         <div class="hint" style="margin-top:10px">
           薪资下限留空 = 不按薪资淘汰。学历 / 年限 / 技术栈在
-          <a href="工作台-定位.html" style="color:#8fb3e8">岗位判断与分析 → 我是谁</a> 里改，六份方向共用一份画像。
+          <a href="工作台-档案.html" style="color:#8fb3e8">我的档案</a> 里改，所有方向共用这一份。
         </div>
+        <div class="acts"><button class="btn pri" id="saveL4">保存</button></div>
       </div>
     </section>
   </div>
@@ -236,12 +238,12 @@ details.lg summary:hover{color:#b6c0cf}
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" data-fold="closed">
       <div class="card-h"><h2>任务</h2><span class="meta" id="jobmeta"></span></div>
       <div class="card-b" id="jobbox"><div class="empty">还没有任务。点「试跑」看判定。</div></div>
     </section>
 
-    <section class="card">
+    <section class="card" data-fold="closed">
       <div class="card-h"><h2>最近任务</h2><span class="meta">jobs/ 目录，append 式记录</span></div>
       <div class="card-b" id="recent"><div class="empty">—</div></div>
     </section>
