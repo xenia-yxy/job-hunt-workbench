@@ -49,6 +49,11 @@ EXCLUDE_REL_PATHS = {
     'docs/模板导出清单.md',
 }
 # 导出白名单（相对项目根）：这些文件必须零敏感串
+# 收集白名单时要跳过的实例私有文件（只在收集阶段生效，不影响源码扫描）
+COLLECT_EXCLUDE = {
+    'docs/系统说明-01-数据分析流程.md',   # 本实例的数据分析推导过程，含具体画像
+    'docs/模板导出清单.md',               # 实例侧的导出核对清单
+}
 TEMPLATE_GLOBS = [
     'README.md', 'LICENSE', '.gitignore', 'serve.example.js',
     'docs/*.md', 'workbuddy_out/README.md',
@@ -151,6 +156,12 @@ def collect_template_files(root: Path):
     for pattern in TEMPLATE_GLOBS:
         for hit in glob.glob(str(root / pattern), recursive=True):
             f = Path(hit)
+            # 白名单按目录撒网（如 docs/*.md），实例私有的文档要在收集这一层挡掉，
+            # 否则会被顺手带进公开仓库。
+            # 不能复用 EXCLUDE_REL_PATHS：那份名单是给「源码扫描」用的，
+            # 里面本来就有 app/build.js、jkit/conditions.py 这些**要**导出的文件。
+            if rel(f, root) in COLLECT_EXCLUDE:
+                continue
             if f.is_file() and f.suffix in TEXT_EXT and str(f) not in seen:
                 seen.add(str(f))
                 yield f

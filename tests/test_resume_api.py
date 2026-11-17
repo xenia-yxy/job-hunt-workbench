@@ -6,6 +6,10 @@
 不 mock 解析器。
 
 跑法：python -m unittest discover -s tests -q
+
+注意：这是接口级测试，会真的往当前实例写简历与画像。所以 setUpModule 先给
+profile.json 拍快照，tearDownModule 把上传的文件删掉、画像原样写回——
+跑测试不应该把工作台的数据弄脏。
 """
 import base64
 import io
@@ -78,6 +82,31 @@ def _server_up():
 
 
 SERVER_UP = _server_up()
+PROFILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                       "config", "local", "profile.json")
+_SNAPSHOT = {"bytes": None, "exists": False}
+
+
+def setUpModule():
+    if os.path.exists(PROFILE):
+        _SNAPSHOT["bytes"] = open(PROFILE, "rb").read()
+        _SNAPSHOT["exists"] = True
+
+
+def tearDownModule():
+    if not SERVER_UP:
+        return
+    # 删掉本测试上传的简历（接口级删除，顺带清文件）
+    try:
+        _, j = api("GET", "/api/resume/list")
+        for it in j.get("items") or []:
+            api("DELETE", "/api/resume/" + it["id"])
+    except Exception:
+        pass
+    # 画像原样写回：测试里的写入不该留在工作台上
+    if _SNAPSHOT["exists"]:
+        with open(PROFILE, "wb") as f:
+            f.write(_SNAPSHOT["bytes"])
 
 
 @unittest.skipUnless(SERVER_UP, "需要本地服务：node server.js（%s）" % BASE)
