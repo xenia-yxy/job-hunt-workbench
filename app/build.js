@@ -52,10 +52,15 @@ const BUILD = APP_CFG.build || {};
 const TPL_DIR = BUILD.template_dir || path.relative(ROOT, __dirname).split(path.sep).join('/');
 const TPL_FILE = BUILD.template || 'app.template.html';
 
+// 数据文件只要求「存在且可读」，允许 0 条记录——全新克隆开箱就是空的。
+// 注意：真实记录**不再内联进页面**。页面的一切数据都从服务端 /api/data 读，
+// 内联一次就等于把私人台账烤进 HTML，既能被 grep 到、又会和磁盘数据打架。
 const data = read(FILES.data);
-if(!data || !KEYS.some(k => Array.isArray(data[k]))) {
-  throw new Error('数据文件不可读或没有任何渠道记录：' + FILES.data);
+if(data == null) {
+  throw new Error('数据文件不可读：' + FILES.data + '（先跑一次 setup 生成空数据文件）');
 }
+const skeleton = {};
+KEYS.forEach(k => { skeleton[k] = []; });
 
 // 旧版 overrides：历史迁移已完成，这里只做提示，不自动迁移（历史数据不回改）
 for(const f of [].concat(APP_CFG.legacy_overrides || [])){
@@ -89,8 +94,9 @@ const clientCfg = {
   prob: PROB_RULES
 };
 const cfgScript = 'window.__WB_CONFIG__ = ' + JSON.stringify(clientCfg).replace(/<\//g, '<\\/') + ';\n';
-// 防止数据里出现 </script> 提前闭合脚本
-const payload = JSON.stringify(data).replace(/<\//g, '<\\/');
+// 页面内不内联任何真实数据：FALLBACK_D 只给「服务端未启动」时一个空骨架，
+// 真实数据一律走 /api/data。这样 HTML 里永远不含私人记录，也不会与磁盘数据分叉。
+const payload = JSON.stringify(skeleton);
 // 概率引擎内联进页面，保证离线打开时也能按进度算概率（与服务端同一份代码 + 同一份规则）
 const probSrc = fs.readFileSync(path.join(ROOT, 'prob.js'), 'utf8');
 const out = tpl
@@ -99,6 +105,7 @@ const out = tpl
   .replace(probMarker, () => probSrc);
 fs.writeFileSync(path.join(ROOT, FILES.app_html), out, 'utf8');
 
-const total = KEYS.reduce((n, k) => n + (data[k] || []).length, 0);
-console.log('已生成 ' + FILES.app_html + '，内联 ' + total + ' 条记录（' +
-  KEYS.map(k => k + ':' + (data[k] || []).length).join(' / ') + '），' + out.length + ' 字符');
+const total = KEYS.reduce((n, k) => n + ((data[k] || []).length), 0);
+console.log('已生成 ' + FILES.app_html + '（页面内不内联记录，运行时从 /api/data 读）；'
+  + '当前数据源 ' + FILES.data + ' 共 ' + total + ' 条（' +
+  KEYS.map(k => k + ':' + ((data[k] || []).length)).join(' / ') + '），' + out.length + ' 字符');

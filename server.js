@@ -54,6 +54,19 @@ const PROB_RULES = loadRule('prob');
 if(!PROB_RULES){ console.error('缺少概率规则：rules/local/prob.json 或 rules/prob.example.json'); process.exit(2); }
 const PE = require('./prob.js')(PROB_RULES, CHANNELS);
 const WBRO = require('./workbench_readonly.js');
+// 任务总线：页面按钮 → jobs/<id>.json → 脚本类就地执行 / 智能体类等外部取件
+const JOBS = require('./job_bus.js').createBus(ROOT, loadLocal);
+// 投递条件读写：规则从 jkit inspect 取，不在这里复制阈值
+const COND = require('./conditions_api.js').createApi(ROOT, loadLocal);
+// 图谱内容只读索引：定位页「分析结果」点开就地展开，不跳 atlas.html
+const ATLAS = require('./atlas_api.js').createApi(ROOT, APP);
+// 台账数据层：唯一的写入口，版本化 + 记录级 CRUD + 串行写
+const STORE = require('./data_store.js');
+// 投递事件流 → 跟踪台账 的单向回流
+const LEDGER = require('./ledger_import.js');
+// 画像：唯一写入口（手填 / 简历回写 / 智能体回写都走它）
+const PROFILE = require('./profile_store.js').create({ root: ROOT });
+const RESUME = require('./resume_api.js').createApi({ root: ROOT, profile: PROFILE });
 
 const F = APP.files || {};
 const PAGES = APP.pages || {};
@@ -112,12 +125,9 @@ function keysOf(d){
   return keys;
 }
 function readData(){
-  const d = readJSON(DATA_FILE);
-  const out = emptyData();
-  if(d && typeof d === 'object') keysOf(d).forEach(k => { if(Array.isArray(d[k])) out[k] = d[k]; });
-  return out;
+  return DB.read().data;
 }
-function countOf(d){ return Object.keys(d).reduce((n,k) => n + (d[k] || []).length, 0); }
+function countOf(d){ return DB.countOf(d); }
 
 // 写入前统一规整，保证渠道/来源一致、字段齐全；未知字段（含 source_refs）原样透传
 function normalize(d){
@@ -185,27 +195,59 @@ function regenCSV(d){
     '收到时间','发件人','摘要','完整沟通记录','链接','录取概率','当前进度','概率依据','下一步建议','风险标记'], crows);
 }
 
-// 原子写 + 自动备份（防误删）
-function saveData(d, withBackup){
-  const norm = normalize(d);
-  if(withBackup !== false && fs.existsSync(DATA_FILE)){
-    try { fs.copyFileSync(DATA_FILE, BAK_FILE); } catch(e){}
-  }
-  const tmp = DATA_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(norm, null, 1), 'utf8');
-  fs.renameSync(tmp, DATA_FILE);
-  regenCSV(norm);
-  return norm;
-}
+// 数据层：JSON 是唯一真相，CSV 是派生品；写盘失败必须能看见，写成功不能报错
+const DB = STORE.create({
+  root: ROOT,
+  dataFile: DATA_FILE,
+  backupFile: BAK_FILE,
+  keys: KEYS,
+  normalize,
+  regenCSV
+});
 
 function json(res, obj, code){
   res.writeHead(code || 200, {'Content-Type':'application/json;charset=utf-8', 'Cache-Control':'no-store'});
   res.end(JSON.stringify(obj));
 }
-function readBody(req, cb){
+function readBody(req, cb, res){
   let b = '';
-  req.on('data', c => { b += c; if(b.length > 8e6) req.destroy(); });
-  req.on('end', () => cb(b));
+  let tooLarge = false;
+  // 16MB：简历上传走 base64（8MB 文件 ≈ 10.7MB 字符串），要留出余量。
+  // 超限不能直接 destroy —— 那样浏览器只会看到「连接被重置」，
+  // 正确的做法是收完流之后回一个能读懂的 413。
+  req.on('data', c => {
+    if(tooLarge) return;
+    if(b.length + c.length > 16e6){ tooLarge = true; b = ''; return; }
+    b += c;
+  });
+  req.on('end', () => {
+    if(tooLarge){
+      if(res) return json(res, {ok:false, code:'TOO_LARGE', hint:'请求体超过 16MB'}, 413);
+      return cb('');
+    }
+    cb(b);
+  });
+  // 返回 true：调用点普遍写成 `if(...) return readBody(req, cb);`
+  // ——readBody 是异步的，返回值只有「接住了 / 没接住」这一个含义。
+  // 这里返回 undefined 会让请求继续往下走静态兜底，造成二次写头
+  // （ERR_HTTP_HEADERS_SENT，浏览器侧表现为连接被重置）。
+  return true;
+}
+// 画像写入用：对象递归合并，数组整体替换（tech_stack 不能按下标缝补）
+function mergeDeep(base, patch){
+  const out = (base && typeof base === 'object' && !Array.isArray(base)) ? Object.assign({}, base) : {};
+  const src = patch || {};
+  for(const k of Object.keys(src)){
+    const v = src[k];
+    if(v === undefined) continue;
+    if(v && typeof v === 'object' && !Array.isArray(v)
+       && out[k] && typeof out[k] === 'object' && !Array.isArray(out[k])){
+      out[k] = mergeDeep(out[k], v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
 }
 function serveFile(res, name){
   const fp = path.join(ROOT, name);
@@ -228,8 +270,41 @@ const server = http.createServer((req, res) => {
   let p;
   try { p = decodeURIComponent(u.pathname); } catch(e){ p = u.pathname; }
 
+  // ---- 画像写入：改一次，所有投递方向跟着变 ----
+  // 这是「我是谁」的唯一真相。conditions/*.json 通过 profile_ref 引用它，
+  // 所以写盘前必须留档 —— 一次误改会同时改变所有方向的筛选口径。
+  // 必须排在 WBRO.handle 之前：只读模块对 /api/profile 只应答 GET，POST 到这里才算写入。
+  if(p === '/api/profile' && (req.method === 'POST' || req.method === 'PUT')){
+    return readBody(req, body => {
+      try{
+        const patch = JSON.parse(body || '{}');
+        if(!patch || typeof patch !== 'object' || Array.isArray(patch)){
+          return json(res, {ok:false, code:'BAD_BODY', hint:'画像补丁必须是 JSON 对象'}, 400);
+        }
+        const r = PROFILE.apply(patch, {
+          source: patch.__source || 'manual',
+          backup: true
+        });
+        return json(res, {ok:true, created:r.created, profile:r.profile, backup:r.backup});
+      }catch(e){ return json(res, {ok:false, code:'WRITE_FAIL', err:String(e)}, 500); }
+    });
+  }
+
+  // ---- 简历：上传 / 列表 / 正文 / 删除 / 回写画像 ----
+  // 上传的是文件与抽取出来的纯文本；姓名、电话、邮箱一律不提取、不入库。
+  if(RESUME.handle(req, res, p, u, json, (rq, cb) => readBody(rq, cb, res))) return;
+
   // ---- 工作台：只读数据链（独立模块，内存聚合、零落盘、幂等）----
   if(WBRO.handle(ROOT, p, u, res, json)) return;
+
+  // ---- 任务总线：点一下就执行，脚本类秒级、智能体类排队等取件 ----
+  if(JOBS.handle(req, res, p, u, json, readBody)) return;
+
+  // ---- 图谱内容只读索引：给定位页分析结果就地展开用 ----
+  if(ATLAS.handle(req, res, p, u, json)) return;
+
+  // ---- 投递条件：六份条件的人话视图与白名单写入 ----
+  if(COND.handle(req, res, p, u, json, readBody)) return;
 
   // ---- 工作台：只读配置 ----
   if(p === '/api/routes'){
@@ -251,29 +326,109 @@ const server = http.createServer((req, res) => {
     }});
   }
 
-  // ---- 主 API：整份数据读 / 写 ----
+  // ---- 主 API：整份读 / 写（写带版本号，过期即冲突，绝不静默覆盖）----
   if(p === '/api/data' && req.method === 'GET'){
-    const d = readData();
-    return json(res, {ok:true, data:d, count:countOf(d), hasBackup:fs.existsSync(BAK_FILE)});
+    const cur = DB.read();
+    return json(res, {ok:true, data:cur.data, count:DB.countOf(cur.data),
+      version:cur.version, hasBackup:fs.existsSync(BAK_FILE)});
   }
   if(p === '/api/data' && (req.method === 'PUT' || req.method === 'POST')){
-    return readBody(req, body => {
+    return readBody(req, async body => {
       try {
         const payload = JSON.parse(body || '{}');
         const d = payload.data || payload;
-        const norm = saveData(d, payload.backup !== false);
-        return json(res, {ok:true, count:countOf(norm), updatedAt:new Date().toISOString()});
-      } catch(e){ return json(res, {ok:false, err:String(e)}, 500); }
+        const r = await DB.replaceAll(d, { backup: payload.backup !== false, baseVersion: payload.baseVersion });
+        return json(res, {ok:true, count:r.count, version:r.version, updatedAt:new Date().toISOString(),
+          csv_warning:r.csvError || undefined});
+      } catch(e){
+        if(e.code === 'VERSION_CONFLICT'){
+          // 页面拿着旧快照来覆盖：拒绝，并把最新版本回给页面，由页面决定合并还是重载
+          return json(res, {ok:false, code:'VERSION_CONFLICT', err:String(e.message),
+            version:e.current && e.current.version, data:e.current && e.current.data}, 409);
+        }
+        return json(res, {ok:false, code:e.code || 'WRITE_FAIL', err:String(e && e.message || e)}, 500);
+      }
     });
   }
+
+  // ---- 记录级增删改查：页面每改一条只动这一条，不做整份覆盖 ----
+  //   POST   /api/data/:channel        {record}
+  //   PATCH  /api/data/:channel/:id    {patch}
+  //   DELETE /api/data/:channel/:id
+  //   GET    /api/data/:channel/:id
+  const recMatch = p.match(/^\/api\/data\/([^/]+)(?:\/([^/]+))?$/);
+  if(recMatch){
+    let ch = recMatch[1], id = recMatch[2];
+    try { ch = decodeURIComponent(ch); if(id) id = decodeURIComponent(id); } catch(e){}
+    const fail = (e) => {
+      const codes = {BAD_CHANNEL:400, BAD_RECORD:400, NOT_FOUND:404, VERSION_CONFLICT:409};
+      return json(res, {ok:false, code:e.code || 'WRITE_FAIL', err:String(e && e.message || e)}, codes[e.code] || 500);
+    };
+    if(req.method === 'GET'){
+      if(!id) return json(res, {ok:false, code:'NOT_FOUND', err:'需要记录 id'}, 404);
+      const f = DB.find(ch, id);
+      return f.record ? json(res, {ok:true, record:f.record, version:f.version})
+                      : json(res, {ok:false, code:'NOT_FOUND', err:'记录不存在'}, 404);
+    }
+    if(req.method === 'POST' && !id){
+      return readBody(req, async body => {
+        try {
+          const payload = JSON.parse(body || '{}');
+          const rec = payload.record || payload;
+          const r = await DB.create(ch, rec, { backup: payload.backup !== false });
+          return json(res, {ok:true, record:r.record, version:r.version, csv_warning:r.csvError || undefined}, 201);
+        } catch(e){ return fail(e); }
+      });
+    }
+    if((req.method === 'PATCH' || req.method === 'PUT') && id){
+      return readBody(req, async body => {
+        try {
+          const payload = JSON.parse(body || '{}');
+          const patch = payload.patch || payload;
+          const r = await DB.update(ch, id, patch, { backup: payload.backup !== false, baseVersion: payload.baseVersion });
+          return json(res, {ok:true, record:r.record, version:r.version, csv_warning:r.csvError || undefined});
+        } catch(e){ return fail(e); }
+      });
+    }
+    if(req.method === 'DELETE' && id){
+      return DB.remove(ch, id, { backup:true })
+        .then(r => json(res, {ok:true, removed:r.removed, version:r.version, csv_warning:r.csvError || undefined}))
+        .catch(fail);
+    }
+  }
+
+  // ---- 投递事件流 → 跟踪台账 单向回流（幂等，可反复点）----
+  if(p === '/api/ledger/import'){
+    if(req.method !== 'POST') return json(res, {ok:false, err:'需要 POST'}, 405);
+    return readBody(req, body => {
+      try {
+        let payload = {};
+        try { payload = JSON.parse(body || '{}'); } catch(e){}
+        const wb = loadLocal('workbuddy') || {};
+        const run = LEDGER.importLedger(DB, {
+          root: ROOT,
+          runsDir: (APP.source_paths && APP.source_paths.runs) || wb.runs_dir || 'runs',
+          channels: KEYS,
+          dryRun: !!payload.dry_run,
+          runIds: Array.isArray(payload.run_ids) ? payload.run_ids : null
+        });
+        Promise.resolve(run)
+          .then(r => json(res, r))
+          .catch(e => json(res, {ok:false, err:String(e && e.message || e)}, 500));
+      } catch(e){ return json(res, {ok:false, err:String(e && e.message || e)}, 500); }
+    });
+  }
+
   if(p === '/api/restore' && (req.method === 'POST' || req.method === 'PUT')){
-    try {
-      if(!fs.existsSync(BAK_FILE)) return json(res, {ok:false, err:'暂无备份文件'}, 404);
-      const d = readJSON(BAK_FILE);
-      if(!d) return json(res, {ok:false, err:'备份文件不可读'}, 500);
-      const norm = saveData(d, false);
-      return json(res, {ok:true, count:countOf(norm), restored:true});
-    } catch(e){ return json(res, {ok:false, err:String(e)}, 500); }
+    return (async () => {
+      try {
+        if(!fs.existsSync(BAK_FILE)) return json(res, {ok:false, err:'暂无备份文件'}, 404);
+        const d = readJSON(BAK_FILE);
+        if(!d) return json(res, {ok:false, err:'备份文件不可读'}, 500);
+        const r = await DB.replaceAll(d, { backup:false });
+        return json(res, {ok:true, count:r.count, version:r.version, restored:true});
+      } catch(e){ return json(res, {ok:false, err:String(e && e.message || e)}, 500); }
+    })();
   }
 
   // ---- 一键清理：按 cleanup.py 的固定口径只留「有沟通 + 有后续机会」的记录 ----
@@ -316,22 +471,31 @@ const server = http.createServer((req, res) => {
     return json(res, out);
   }
   if(p === '/api/save' && req.method === 'POST'){
-    return readBody(req, body => {
+    return readBody(req, async body => {
       try {
-        const {file, store} = JSON.parse(body || '{}');
-        const d = readData();
-        const patch = r => {
+        const payload = JSON.parse(body || '{}');
+        const patch = payload.patch || payload.store || {};
+        if(!patch || typeof patch !== 'object' || Array.isArray(patch)){
+          return json(res, {ok:false, code:'BAD_BODY', err:'patch 必须是对象'}, 400);
+        }
+        // 旧接口只改 status / note：逐条走记录级写入，不整份覆盖
+        const file = payload.file;
+        const channels = (file === 'campus') ? CAMPUS_KEYS : keysOf(readData());
+        const cur = DB.read();
+        const ops = [];
+        channels.forEach(ch => (cur.data[ch] || []).forEach(r => {
           const key = (file === 'campus') ? String(r.id).replace(/^cx_/, '') : r.id;
-          const v = (store || {})[key];
+          const v = patch[key];
           if(!v) return;
-          if('status' in v) r.status = v.status || '';
-          if('note' in v) r.note = v.note || '';
-        };
-        if(file === 'campus') CAMPUS_KEYS.forEach(k => (d[k] || []).forEach(patch));
-        else keysOf(d).forEach(k => (d[k] || []).forEach(patch));
-        saveData(d, false);
-        return json(res, {ok:true});
-      } catch(e){ return json(res, {ok:false, err:String(e)}, 500); }
+          const p = {};
+          if('status' in v) p.status = v.status || '';
+          if('note' in v) p.note = v.note || '';
+          if(Object.keys(p).length) ops.push(DB.update(ch, r.id, p, { backup:false }));
+        }));
+        await Promise.all(ops);
+        const after = DB.read();
+        return json(res, {ok:true, version:after.version, updated:ops.length});
+      } catch(e){ return json(res, {ok:false, code:e.code || 'WRITE_FAIL', err:String(e && e.message || e)}, 500); }
     });
   }
 
@@ -344,6 +508,7 @@ const server = http.createServer((req, res) => {
 
   const fp = path.join(ROOT, path.normalize(p).replace(/^(\.\.[/\\])+/, ''));
   fs.readFile(fp, (err, buf) => {
+    if(res.headersSent) return;          // 前面已经应答过，别再写一次头
     if(err){ res.writeHead(404); return res.end('404'); }
     res.writeHead(200, {'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': CACHE});
     res.end(buf);
@@ -354,10 +519,16 @@ server.on('error', e => {
   if(e.code === 'EADDRINUSE'){ console.log(PORT + ' 端口已有服务在运行，本实例自动退出（不影响现有服务）。'); process.exit(0); }
   console.error(e); process.exit(1);
 });
+
+// 本地单人工具：单个请求抛错不应该带走整个服务，但必须喊出来，不静默
+process.on('uncaughtException', e => { console.error('[uncaught] ' + (e && e.stack || e)); });
+process.on('unhandledRejection', e => { console.error('[unhandled] ' + (e && e.stack || e)); });
+
 server.listen(PORT, () => {
+  const cur = DB.read();
   console.log(TITLE + ' 已启动： http://localhost:' + PORT + '/');
   console.log('  工作台： http://localhost:' + PORT + (WB_PATHS[0] || '/' + WB_PAGE));
-  console.log('  数据源： ' + F.data + '（' + countOf(readData()) + ' 条）');
+  console.log('  数据源： ' + F.data + '（' + DB.countOf(cur.data) + ' 条 · 版本 ' + cur.version + '）');
   console.log('  渠道： ' + KEYS.join(' / '));
-  console.log('  改动实时写回 JSON + ' + F.csv_main + ' + ' + F.csv_campus);
+  console.log('  写入：记录级增删改查 + 版本冲突保护；JSON 是唯一真相，CSV 为派生文件');
 });

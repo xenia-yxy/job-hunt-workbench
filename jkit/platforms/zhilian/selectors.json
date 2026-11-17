@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "captured_at": "2026-11-13T21:30:00+08:00",
+  "captured_note": "智联搜索结果页（/jobs/?jl=765）实测。与 BOSS 同构：左列表 + 右面板。",
+  "url": "https://www.zhaopin.com/jobs/?jl=765",
+  "selectors": {
+    "search.input": {
+      "sel": "input.query-sug__input",
+      "count": 1
+    },
+    "list.panel": {
+      "sel": ".job-list-panel",
+      "count": 1
+    },
+    "list.card": {
+      "sel": ".job-list-panel .job-card",
+      "count": 30
+    },
+    "list.card_active": {
+      "sel": ".job-card--active",
+      "count": 1
+    },
+    "detail.panel": {
+      "sel": ".job-detail-modules__detail",
+      "count": 1
+    },
+    "detail.title": {
+      "sel": ".job-detail-summary__title-text",
+      "count": 1
+    },
+    "detail.salary": {
+      "sel": ".job-detail-summary__salary",
+      "count": 1
+    },
+    "detail.tag": {
+      "sel": ".job-detail-summary__tag",
+      "count": 3
+    },
+    "apply.btn": {
+      "sel": ".job-detail-summary__apply",
+      "count": 1
+    },
+    "apply.prechat": {
+      "sel": ".job-detail-summary__prechat",
+      "count": 1
+    },
+    "dialog.modal": {
+      "sel": ".deliver-greeting-modal",
+      "count": 1
+    },
+    "filter.trigger": {
+      "sel": ".filter-select-box__trigger",
+      "count": 6
+    },
+    "filter.panel": {
+      "sel": ".filter-select-box__panel",
+      "count": 1
+    },
+    "filter.item": {
+      "sel": ".filter-select-box__item",
+      "count": 20
+    }
+  },
+  "city_code": {
+    "深圳": "765",
+    "广州": "763",
+    "上海": "538",
+    "北京": "530"
+  },
+  "notes": [
+    "投递按钮文案：未投=立即投递，已投=继续沟通；只看 apply.btn，不要看 prechat。",
+    "客户公司信息区块 = 真外包；卡片 tag_JD_waipai = 外派标（减分不否决）。",
+    "经验档最低多为 1-3 年，筛「1 年以下」会把 AI 岗筛到 0。"
+  ]
+}

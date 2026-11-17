@@ -1,0 +1,21 @@
+{
+  "name": "job-hunt-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "本地求职工作台：岗位判断 → 投递 → 跟踪，数据落在自己的磁盘上",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "setup": "python tools/setup.py",
+    "demo": "python tools/setup.py --demo --force",
+    "build": "node tools/build.js",
+    "start": "node server.js",
+    "serve": "node server.js",
+    "test": "npm run test:py && npm run test:js",
+    "test:py": "python -m unittest discover -s tests -q",
+    "test:js": "node tests/test_client_write.js && node tests/test_job_bus_params.js",
+    "cleanup": "python cleanup.py"
+  }
+}

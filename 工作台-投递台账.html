@@ -35,7 +35,20 @@ a{color:var(--accent);text-decoration:none}
 code{background:var(--panel2);padding:2px 6px;border-radius:5px;font-size:11px}
 ul{color:var(--mut);font-size:12px;padding-left:20px;margin:6px 0}
 .scroll{overflow-x:auto}
-</style></head>
+/* P-D：判定详情展开；P-B：本次实际条件摘要 */
+details.vd{cursor:pointer}
+details.vd summary{list-style:none;color:var(--ink)}
+details.vd summary::-webkit-details-marker{display:none}
+details.vd summary::before{content:"▸ ";color:var(--mut)}
+details.vd[open] summary::before{content:"▾ "}
+.vdbody{margin-top:5px;padding:6px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;font-size:11px;line-height:1.7;color:var(--mut)}
+.vdbody .k{color:#9fb0c8}
+.rsn{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:0 6px;margin:2px 3px 0 0;font-size:10.5px}
+.condsum{margin-top:4px;font-size:10.5px;line-height:1.7}
+.condsum b{color:#9fb0c8;font-weight:500}
+.condsum .fill{color:var(--ok)}
+</style>
+<link rel="stylesheet" href="/assets/ui.css"></head>
 <body><div class="wrap">
   <h1>投递台账 <span class="tag">只读</span></h1>
   <p class="sub">历史 run 目录下 append-only 台账的运行时内存聚合 · 零落盘 · 不写入跟踪主表 · 不触发任何投递动作。</p>
@@ -62,7 +75,8 @@ ul{color:var(--mut);font-size:12px;padding-left:20px;margin:6px 0}
     <ul>
       <li>数据源：<code>runs/*/ledger.jsonl</code>，坏行跳过；稳定 ID = 批次 + 行号 + 去重键（<code>job_id</code> 优先，退回「公司|标题」）。</li>
       <li>结论口径：<code>outcome</code> 或 <code>delivery.outcome</code>；只有 <code>delivered</code> 计入已投递，与 <code>jkit/store.py</code> 一致。</li>
-      <li>条件快照只存路径字符串：<b>不解析、不回填、不统一两套 schema</b>；旧格式仅展示原文路径。</li>
+      <li>条件快照：新批次读 <code>summary.json</code> 展示<b>本次实际生效条件 + 目标完成情况</b>（P-B）；旧批次只存路径字符串，仅展示原文，不解析不回填。</li>
+      <li>判定详情：每行「依据/判定」可展开，显示否决项 / 判定依据 / 评分 / HR 状态 / JD 摘录（P-D）——即"为何跳过、为何投"的详情级留痕。</li>
       <li>跟踪主表仍按既有铁律只保留「有沟通、有后续机会」的记录；海投流水不灌进主表，通过可选 <code>source_refs[]</code> 引用式关联。</li>
       <li>历史台账与快照一律不回改；条件变更必须新建批次与 <code>condition_id</code>。</li>
     </ul>
@@ -95,6 +109,39 @@ function filtered(){
   });
 }
 
+// P-D：把一条台账的详情判定展开成可读块（veto / reasons / hr_level / JD 摘要）
+function verdictDetail(e){
+  const bits = [];
+  if(e.veto) bits.push('<div><span class="k">否决项</span>：'+esc(e.veto)+'</div>');
+  if((e.reasons||[]).length) bits.push('<div><span class="k">判定依据</span>：'+
+    e.reasons.map(r=>'<span class="rsn">'+esc(r)+'</span>').join('')+'</div>');
+  if(e.grade || e.score!=null) bits.push('<div><span class="k">评分</span>：'+
+    esc(e.score==null?'—':e.score)+' 分 · '+esc(e.grade||'—')+' 档</div>');
+  if(e.hr_level) bits.push('<div><span class="k">HR 状态</span>：'+esc(e.hr_level)+'</div>');
+  if(e.jd_len) bits.push('<div><span class="k">JD</span>：'+esc(e.jd_len)+' 字</div>');
+  if(e.jd_brief) bits.push('<div><span class="k">JD 摘录</span>：'+esc(e.jd_brief.slice(0,160))+'</div>');
+  if(!bits.length) bits.push('<div class="mut">这条记录没有详情判定留痕（旧格式或卡片层已淘汰）</div>');
+  return '<details class="vd"><summary>'+esc([e.verdict, e.reason].filter(Boolean).join(' · ')||'查看判定')+
+    '</summary><div class="vdbody">'+bits.join('')+'</div></details>';
+}
+
+// P-B：把 run 的本次实际条件渲染成摘要（来源版本 + 生效筛选 + 目标完成情况）
+function condSummary(r){
+  const u = r.used_conditions;
+  if(!u) return '';
+  const rows = [];
+  rows.push('<div><b>条件版本</b> '+esc(u.condition_id||'—')+' · '+esc(u.platform||'—')+'</div>');
+  const f = u.applied_filters || u.filters || {};
+  const fs = Object.keys(f).map(k=>esc(k)+'='+esc(Array.isArray(f[k])?f[k].join('/'):f[k]));
+  if(fs.length) rows.push('<div><b>生效筛选</b> '+fs.join(' · ')+'</div>');
+  if((u.queries||[]).length) rows.push('<div><b>搜索词</b> '+u.queries.map(esc).join(' / ')+'</div>');
+  if(u.target != null) rows.push('<div><b>数量</b> <span class="'+(u.shortfall?'':'fill')+'">'+
+    '目标'+esc(u.target)+' · 成功'+esc(u.completed==null?'—':u.completed)+
+    (u.shortfall?' · 缺'+esc(u.shortfall):' · 已投够')+'</span>'+
+    (u.stopped?' · '+esc(u.stopped):'')+'</div>');
+  return '<div class="condsum">'+rows.join('')+'</div>';
+}
+
 function render(){
   const idx = state.idx, t = idx.totals||{}, list = filtered();
   const pages = Math.max(1, Math.ceil(list.length/state.per));
@@ -117,8 +164,8 @@ function render(){
       '<td class="mut">'+esc(e.run_id)+':'+e.line_no+'</td>'+
       '<td>'+esc(e.company||'—')+'</td><td>'+esc(e.title||'—')+'</td>'+
       '<td><span class="oc '+esc(e.outcome)+'">'+esc(e.outcome)+'</span></td>'+
-      '<td class="mut">'+esc([e.verdict, e.reason].filter(Boolean).join(' · ')||'—')+'</td>'+
-      '<td class="mut">'+cond+'</td></tr>';
+      '<td class="mut">'+verdictDetail(e)+'</td>'+
+      '<td class="mut">'+cond+condSummary(r)+'</td></tr>';
   }).join('') : ('<tr><td colspan="7" class="mut">' +
       (t.runs ? '当前筛选无事件。' :
         '暂无投递事件：在 <code>runs/&lt;run_id&gt;/ledger.jsonl</code> 里每行写一条 append-only JSON，刷新后自动聚合到这里。') +

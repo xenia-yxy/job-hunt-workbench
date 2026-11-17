@@ -1,30 +1,36 @@
-# 本地实例配置（含身份、渠道、账号、数据源路径，绝不提交）
-# 只保留说明文件，让你 clone 下来能看到该往哪放什么
+# ---------------------------------------------------------------
+# 这个仓库只放「代码 + 页面 + 文档 + 示例配置」。
+# 你自己的身份、台账数据、投递流水、AI 会话产物一律不进 git。
+# ---------------------------------------------------------------
+
+# 本地实例配置（含身份、渠道、账号、数据源路径）
 config/local/*
 !config/local/README.md
 rules/local/*
 !rules/local/README.md
 
+# 台账数据本身（唯一真相）与它的派生 CSV
+# 注意写成 data/* 而不是 data/：忽略目录后 git 无法再单独包含里面的文件
+data/*
+!data/README.md
+*.csv
+
+# 投递 / 调研的运行时数据；只保留演示流水
+runs/*
+!runs/demo/
+!runs/demo/ledger.jsonl
+*.jsonl
+
 # 外部 AI 会话产物
 workbuddy_out/*
 !workbuddy_out/README.md
 
-# 采集 / 投递 / 调研的运行时数据
-runs/*
-!runs/demo/
-survey/
-unified_data.json*
-*.jsonl
-!runs/demo/ledger.jsonl
-*.csv
+# 任务总线运行态
+jobs/
 
-# 个人产物：简历、报告、图谱快照
-简历_*.html
-非开发岗方向分析_*.html
-跟踪结果页*.html
+# 采集 / 调研产物（如果用到采集器）
+survey/
 atlas.html
-# 例外：demo_data 里的示例简历要跟着仓库走（它们是占位内容，不是个人数据）
-!demo_data/简历_*.html
 
 # 浏览器登录态与账号
 accounts.json
@@ -33,14 +39,16 @@ scope.json
 profile/
 .user-data/
 
+# 生成物：由 app/build.js 从模板 + 配置生成，clone 后跑一次 npm run build
+app.html
+
 # 其它
 __pycache__/
 *.pyc
+*.egg-info/
 node_modules/
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 workbuddy_out/verify/hash-baseline.json
-# 由 app/build.js 生成的页面（数据内嵌，不入库）
-求职台账.html

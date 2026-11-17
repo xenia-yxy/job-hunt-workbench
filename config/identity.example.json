@@ -1,11 +1,14 @@
 {
   "schema": "identity/v1",
-  "_note": "身份占位骨架。真实值只放 config/local/identity.json（gitignored），或由 WorkBuddy 会话从本地事实源读取后注入任务模板。",
-  "name": "<YOUR_NAME>",
-  "graduation": "<YOUR_GRADUATION_YEAR>",
-  "school": "<YOUR_SCHOOL>",
-  "city": "<YOUR_CITY>",
-  "contact": "<YOUR_CONTACT>",
-  "greeting": "<YOUR_GREETING>",
-  "tech_stack": ["<TECH_1>", "<TECH_2>"]
+  "_note": "「我是谁」的默认骨架。真实值请复制到 config/local/identity.json 再改（local 优先且不被 git 跟踪）——工作台的任务指令、招呼语、简历方向都会引用它。",
+  "name": "你的名字",
+  "graduation": "2026",
+  "school": "你的学校",
+  "city": "深圳",
+  "contact": "you@example.com",
+  "greeting": "你好，看过您的职位，觉得比较适合自己，希望有机会进一步沟通。",
+  "tech_stack": ["TypeScript", "React", "Node.js"],
+  "target_roles": ["前端开发", "全栈开发"],
+  "salary_expect": "",
+  "available_from": ""
 }

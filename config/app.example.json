@@ -1,42 +1,42 @@
 {
   "schema": "app/v1",
-  "_note": "运行参数。文件名与路径一律写占位符，实例值放 config/local/app.json。",
+  "_note": "运行参数。这里给的是「开箱能跑」的中性默认值；要改文件名或端口，复制到 config/local/app.json 再改（local 优先，且不被 git 跟踪）。代码里没有任何默认文件名——这里缺项，服务直接退出。",
   "port": 8787,
-  "workbench_title": "<WORKBENCH_TITLE>",
+  "workbench_title": "求职工作台",
   "cors": {
     "origin": "*",
     "methods": "GET,POST,PUT,DELETE,OPTIONS",
     "headers": "Content-Type"
   },
   "files": {
-    "_note": "五个文件名全部必需（data/backup/csv_main/csv_campus/app_html）。缺任何一项服务直接退出——静默兜底会写错文件。",
-    "data": "<DATA_FILE>.json",
-    "backup": "<BACKUP_FILE>.json",
-    "csv_main": "<MAIN_CSV>.csv",
-    "csv_campus": "<CAMPUS_CSV>.csv",
-    "app_html": "<APP_PAGE>.html",
-    "rules_fallback": "<RULES_FILE>.json"
+    "_note": "五个文件名全部必需（data/backup/csv_main/csv_campus/app_html）。data 是唯一真相，两份 CSV 是每次写盘自动重算的派生文件。",
+    "data": "data/ledger.json",
+    "backup": "data/ledger.backup.json",
+    "csv_main": "data/ledger.csv",
+    "csv_campus": "data/campus.csv",
+    "app_html": "app.html",
+    "rules_fallback": "rules/local/job_family.json"
   },
   "pages": {
-    "_note": "页面路由。workbench 是工作台壳的文件名；两组 paths 是别名，让旧书签继续可用。",
-    "workbench": "<WORKBENCH_PAGE>.html",
-    "workbench_paths": ["/workbench"],
-    "home_paths": ["/", "/index.html"]
+    "_note": "页面路由。workbench 是工作台壳；两组 paths 是别名，旧书签继续可用。",
+    "workbench": "工作台.html",
+    "workbench_paths": [
+      "/workbench"
+    ],
+    "home_paths": [
+      "/",
+      "/index.html",
+      "/app"
+    ]
   },
   "build": {
-    "_note": "主应用页面的生成配置：模板目录（项目根相对）、模板文件名；输出文件名取 files.app_html。",
-    "template_dir": "<BUILD_DIR>",
-    "template": "<TEMPLATE_FILE>"
+    "_note": "主应用页面从模板生成：template_dir 为模板目录（项目根相对），输出文件名取 files.app_html。",
+    "template_dir": "app",
+    "template": "app.template.html"
   },
-  "cleanup": {
-    "_note": "台账清理的数据来源（项目根相对）。scan_files 的 role：jobs=建岗位/薪资索引，jobs_alt=备用岗位索引，delta=会话列表快照。整段缺失时跳过回填、只做判定，不报错。",
-    "out_dir": "runs/cleanup",
-    "scan_dir": "<SCAN_DIR>",
-    "scan_files": [
-      { "file": "<SCAN_FILE_1>.json", "tag": "<SOURCE_LABEL_1>", "role": "jobs" },
-      { "file": "<SCAN_FILE_2>.json", "tag": "<SOURCE_LABEL_2>", "role": "jobs_alt" }
-    ],
-    "detail_files": ["<DETAIL_FILE>.json"]
+  "ledger": {
+    "_note": "投递事件流目录（append-only，每轮一个子目录）。台账页与「写入跟踪台账」都从这里的 ledger.jsonl 读 delivered 行。",
+    "runs_dir": "runs"
   },
   "storage_namespace": "wb",
   "api_base": "",
@@ -44,30 +44,16 @@
     "cache_control": "no-store"
   },
   "sources": {
-    "_note": "工作台只读数据源。全部为项目根相对路径；缺失时接口返回 SOURCE_MISSING，页面显式提示，不静默兜底。",
-    "job_families": "<METRICS_JSON>",
-    "resume_versions": "<RESUME_VERSIONS_JSON>",
-    "atlas_deep_link": "<ATLAS_PAGE>#p-",
-    "doc_roots": ["<DOC_ROOT>"],
-    "doc_allow": ["<DOC_FILE>.md"]
+    "_note": "岗位族 / 简历版本 / 文档等只读数据源，全部为项目根相对路径。没配的项接口返回 SOURCE_MISSING，页面显式提示，不静默兜底。",
+    "job_families": "data/families.json",
+    "resume_versions": "data/resume_versions.json",
+    "atlas_deep_link": "",
+    "atlas_index": "",
+    "families": "",
+    "doc_roots": [
+      "docs"
+    ],
+    "doc_allow": []
   },
-  "artifact_scans": [
-    {
-      "_note": "段内产物自动发现：按同层通配扫描，命中的文件成为该段主视图的变体。group 取值见 routes.json 的 groups[].id。",
-      "group": "<GROUP_ID>",
-      "pattern": "<DIR>/*/<FILE>.html",
-      "label_from": "dirname",
-      "sort": "mtime_desc",
-      "badge": "<BADGE>",
-      "note": "<NOTE>"
-    },
-    {
-      "group": "<GROUP_ID>",
-      "pattern": "<PREFIX>_*.html",
-      "label_from": "basename",
-      "strip_prefix": "<PREFIX>_",
-      "exclude": ["<PREFIX>_<EXCLUDED>.html"],
-      "sort": "name"
-    }
-  ]
+  "artifact_scans": []
 }

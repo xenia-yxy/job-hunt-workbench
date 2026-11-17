@@ -1,0 +1,16 @@
+{
+  "schema": "pipe/v1",
+  "_note": "本机管道指令通道模板。真实实例值放 config/local/pipe_bridge.json（gitignored）。token 必须由使用者自行生成。",
+  "enabled": true,
+  "token": "<REPLACE_WITH_RANDOM_TOKEN>",
+  "sender": "pipe://local",
+  "pipe_name": "\\\\.\\pipe\\<PIPE_NAME>-inbox",
+  "api_base": "http://127.0.0.1:<PORT>",
+  "state_file": "jobs/pipe_bridge_state.json",
+  "log_file": "jobs/pipe_bridge.log",
+  "reply_log": "jobs/pipe_replies.jsonl",
+  "confirm_ttl_minutes": 30,
+  "reply_prefix": "[管道]",
+  "token_hint": "管道客户端已自动携带凭据，指令直接写",
+  "allow_delivery": false
+}

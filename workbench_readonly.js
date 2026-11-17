@@ -87,7 +87,16 @@ function buildLedgerIndex(root, params){
         dedupe_key: dedupeKey(rec), job_id: String((rec && rec.job_id) || ''),
         outcome: oc, delivered: isDelivered,
         verdict: String((rec && rec.verdict) || ''),
-        reason: String((rec && rec.reason) || ''),
+        reason: String((rec && rec.reason) || rec.evidence || ''),
+        // P-D：详情级判定留痕——让"为何跳过/为何投"在台账可见（薪资/地点/经验不符等）
+        veto: String((rec && rec.veto) || ''),
+        reasons: Array.isArray(rec && rec.reasons) ? rec.reasons.map(String) : [],
+        detail: (rec && rec.detail) || null,
+        hr_level: String((rec && rec.hr_level) || ''),
+        jd_brief: String((rec && rec.jd_brief) || ''),
+        jd_len: Number((rec && rec.jd_len) || 0),
+        grade: String((rec && rec.grade) || ''),
+        score: (rec && rec.score != null) ? rec.score : null,
         at: String((rec && (rec.at || rec.updated_at || rec.observed_at)) || ''),
         company: String(snap.company || snap.company_name || ''),
         title: String(snap.title || snap.role || ''),
@@ -98,15 +107,30 @@ function buildLedgerIndex(root, params){
         replied: !!(((rec && rec.tracking) || {}).replied)
       });
     }
-    // 条件快照只存路径字符串：不解析、不回填、不统一两套 schema
+    // P-B：本次实际生效条件——优先读 summary.json（apply 每次落盘的结构化条件），
+    // 让"这一批到底用了什么条件、投够没有"可见，而不再只有一个路径字符串。
     const condRel = 'runs/' + f.run_id + '/condition.json';
     const condExists = fs.existsSync(path.join(root, condRel));
+    const sum = readJSON(path.join(root, 'runs', f.run_id, 'summary.json'));
+    const used = sum ? {
+      condition_id: String(sum.condition_id || ''),
+      platform: String(sum.platform || ''),
+      filters: sum.filters || {},
+      applied_filters: sum.applied_filters || {},
+      queries: Array.isArray(sum.queries) ? sum.queries : [],
+      target: sum.target != null ? sum.target : null,
+      completed: sum.completed != null ? sum.completed : null,
+      shortfall: sum.shortfall != null ? sum.shortfall : null,
+      stopped: String(sum.stopped || '')
+    } : null;
     runs.push({
       run_id: f.run_id, file: rel(path.relative(root, f.fp)),
       lines: rLines, parsed: rParsed, bad_lines: rBad, delivered: rDelivered,
       outcomes: ro,
       condition_ref: condRel, condition_exists: condExists,
-      condition_note: condExists ? '旧格式快照，仅展示原文路径（不解析、不回填）' : '无条件快照',
+      condition_note: used ? '本次实际条件见 used_conditions' :
+        (condExists ? '旧格式快照，仅展示原文路径（不解析、不回填）' : '无条件快照'),
+      used_conditions: used,
       mtime: iso(f.st.mtimeMs)
     });
   }
@@ -310,7 +334,169 @@ function buildJobFamilies(root){
     source: relMetrics, source_mtime: st ? iso(st.mtimeMs) : '',
     total: metrics.total || 0, total_open: metrics.total_open || 0,
     atlas_deep_link: deep, bands, families,
+    directions: buildDirections(root, src),
     totals: {families: families.length, with_resume: families.filter(f => f.resume).length}
+  };
+}
+
+// ---- 族契约：把「族匹配数据(中文族名) / 条件(slug) / 简历(fN)」三边按 id 串起来 ----
+// 为什么要这张表：判断页按中文族名排序、投递按 conditions 文件名筛、简历按 fN 编号，
+// 三套命名空间没有公共语言，用户看到的「A 档」和实际投出去的口径接不上。
+function buildFamilies(root){
+  const contract = loadLocal(root, 'families');
+  if(!contract || !contract.families){
+    return {ok:false, readonly:true, code:'NO_CONTRACT',
+      hint:'缺 config/local/families.json —— 它是族 id 契约，没有它判断/投递/简历三边对不上'};
+  }
+  const jf = buildJobFamilies(root);
+  const byName = {};
+  if(jf && jf.ok){ for(const f of (jf.families || [])) byName[String(f.name)] = f; }
+
+  const dir = String(contract.resume_dir || '').replace(/\/$/, '');
+  const list = Object.keys(contract.families).map(id => {
+    const c = contract.families[id] || {};
+    const m = c.metrics_key ? (byName[String(c.metrics_key)] || null) : null;
+    return {
+      id,
+      label: String(c.label || id),
+      active: !!c.active,
+      order: (typeof c.order === 'number') ? c.order : 999,
+      metrics_key: c.metrics_key || null,
+      conditions: c.conditions || null,
+      note: String(c.note || ''),
+      resume_url: c.resume ? (dir + '/' + String(c.resume) + '.html') : '',
+      // 有 metrics 才有市场分；没有就明确 null，页面写「无样本」，不补 0 也不补平均
+      metrics: m ? {
+        match: m.match, band: m.band, rank: m.rank, dims: m.dims,
+        n: m.n, open: m.open, open_rate: m.open_rate,
+        block: m.block, check: m.check, suspicious: m.suspicious,
+        salary_open_median: m.salary_open_median,
+        edu: m.edu, exp: m.exp, form: m.form,
+        atlas_url: m.atlas_url || ''
+      } : null
+    };
+  }).sort((a, b) => (a.order - b.order) || String(a.label).localeCompare(String(b.label), 'zh'));
+
+  return {
+    ok: true, readonly: true,
+    source: contract.metrics_source || '',
+    source_mtime: (jf && jf.source_mtime) || '',
+    sample_total: (jf && jf.total) || 0,
+    sample_open: (jf && jf.total_open) || 0,
+    contract_schema: contract.schema || '',
+    families: list,
+    active: list.filter(f => f.active).map(f => f.id),
+    totals: {
+      all: list.length,
+      active: list.filter(f => f.active).length,
+      with_metrics: list.filter(f => f.metrics).length
+    }
+  };
+}
+
+// ---- 用户画像：只认 config/local/profile.json，绝不回退 example ----
+// 这是「我是谁」；回退到示例文件等于拿别人的画像投自己的岗。
+// 还没建档时返回空骨架 + exists:false：页面能直接渲染空表单，第一次保存由
+// POST /api/profile 建档（读取侧仍不猜任何值，两者职责分开）。
+function readProfile(root){
+  const abs = path.join(root, 'config/local/profile.json');
+  const v = readJSON(abs);
+  if(!v){
+    const empty = require('./profile_store.js').emptyProfile();
+    return {ok:true, readonly:true, exists:false, code:'NO_PROFILE',
+      hint:'还没填过画像：保存一次就会建档', profile:empty};
+  }
+  return {ok:true, readonly:true, exists:true,
+    profile:require('./profile_store.js').normalize(v)};
+}
+
+// ---- 扩展方向：与主族同构展示，但**不并入**匹配分排序 ----
+// 单列成区的原因：这批数据来自网络公开 JD 抽样，不是平台批量实测，
+// 混进主族的 rank 里会让「实测」和「调研」分不开，匹配分也不再可比。
+function buildDirections(root, src){
+  const rel = safeSub((src || {}).directions || '');
+  if(!rel) return {ok:false, code:'NOT_CONFIGURED',
+    hint:'config 的 sources.directions 未配置'};
+  const fp = path.resolve(root, rel);
+  if(!insideRoot(root, fp)) return {ok:false, code:'SOURCE_OUT_OF_ROOT',
+    hint:'sources.directions 越出项目根，已拒绝'};
+
+  let raw = null, st = null;
+  try { st = fs.statSync(fp); raw = readJSON(fp); } catch(e){}
+  if(!raw || !Array.isArray(raw.directions)){
+    return {ok:false, code:'SOURCE_UNREADABLE', source:rel,
+      hint:'读不到 ' + rel + '（文件缺失或不是合法 JSON）'};
+  }
+
+  const STATUS = {fit:'能投', patch:'补一点', try:'可试', no:'够不着'};
+  const list = raw.directions.map(d => {
+    const jobs = (Array.isArray(d.jobs) ? d.jobs : []).map(j => ({
+      title: String(j.title || ''),
+      company: String(j.company || ''),
+      meta: String(j.meta || ''),
+      salary: String(j.salary || ''),
+      salary_month: Array.isArray(j.salary_month) ? j.salary_month : null,
+      status: STATUS[j.status] ? j.status : 'patch',
+      status_text: String(j.status_text || STATUS[j.status] || ''),
+      short: String(j.short || ''),
+      blocker: String(j.blocker || ''),
+      must: Array.isArray(j.must) ? j.must.map(String) : [],
+      note: String(j.note || '')
+    }));
+    const counts = {fit:0, patch:0, try:0, no:0};
+    for(const j of jobs) counts[j.status] += 1;
+    return {
+      id: String(d.id || ''),
+      label: String(d.label || ''),
+      summary: String(d.summary || ''),
+      n_jobs: jobs.length,
+      salary_min: num(d.salary_min), salary_max: num(d.salary_max),
+      resume_hint: String(d.resume_hint || ''),
+      counts, jobs
+    };
+  });
+
+  const roles = (Array.isArray(raw.roles) ? raw.roles : []).map(r => ({
+    group: String(r.group || ''),
+    name: String(r.name || ''),
+    star: !!r.star,
+    makers: String(r.makers || ''),
+    do: String(r.do || ''),
+    type: String(r.type || ''),
+    prospect: String(r.prospect || ''),
+    verdict: String(r.verdict || ''),
+    detail: String(r.detail || '')
+  }));
+
+  return {
+    ok: true, readonly: true,
+    source: rel, source_mtime: st ? iso(st.mtimeMs) : '',
+    method: String(raw.method || 'web_research'),
+    as_of: String(raw.as_of || ''),
+    note: String(raw._note || ''),
+    roles_note: String(raw._roles_note || ''),
+    source_label: String(raw.source_label || ''),
+    report_url: String(raw.report_url || ''),
+    roles_report_url: String(raw.roles_report_url || ''),
+    atlas_url: String(raw.atlas_url || ''),
+    headlines: Array.isArray(raw.headlines) ? raw.headlines : [],
+    paths: Array.isArray(raw.paths) ? raw.paths : [],
+    roles,
+    list,
+    gaps: Array.isArray(raw.gaps) ? raw.gaps : [],
+    plan: Array.isArray(raw.plan) ? raw.plan : [],
+    caveats: Array.isArray(raw.caveats) ? raw.caveats : [],
+    evidence: Array.isArray(raw.evidence) ? raw.evidence : [],
+    totals: {
+      directions: list.length,
+      roles: roles.length,
+      starred: roles.filter(r => r.star).length,
+      jobs: list.reduce((n, d) => n + d.jobs.length, 0),
+      fit: list.reduce((n, d) => n + d.counts.fit, 0),
+      patch: list.reduce((n, d) => n + d.counts.patch, 0),
+      try: list.reduce((n, d) => n + d.counts.try, 0),
+      no: list.reduce((n, d) => n + d.counts.no, 0)
+    }
   };
 }
 
@@ -511,6 +697,16 @@ function handle(root, p, u, res, json){
     } catch(e){ json(res, {ok:false, code:'INTERNAL', err:String(e)}, 500); }
     return true;
   }
+  if(p === '/api/families'){
+    try { json(res, buildFamilies(root)); }
+    catch(e){ json(res, {ok:false, code:'INTERNAL', err:String(e)}, 500); }
+    return true;
+  }
+  if(p === '/api/profile'){
+    try { json(res, readProfile(root)); }
+    catch(e){ json(res, {ok:false, code:'INTERNAL', err:String(e)}, 500); }
+    return true;
+  }
   if(p === '/api/doc'){
     const r = resolveDoc(root, u.searchParams.get('src'), sourcesOf(root));
     if(!r.abs){
@@ -532,5 +728,5 @@ function handle(root, p, u, res, json){
   return false;
 }
 
-module.exports = {handle, buildLedgerIndex, listTasks, listResults, buildJobFamilies,
-  buildRoutes, expandPattern, resolveDoc, dedupeKey, outcomeOf};
+module.exports = {handle, buildLedgerIndex, listTasks, listResults, buildJobFamilies, buildFamilies, readProfile,
+  buildDirections, buildRoutes, expandPattern, resolveDoc, dedupeKey, outcomeOf};

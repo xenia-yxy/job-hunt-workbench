@@ -171,7 +171,8 @@ tr.row.lv-reject td:first-child{box-shadow:inset 3px 0 var(--danger)}
 footer{border-top:1px solid var(--line);padding-top:12px}
 ::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
 @media(max-width:720px){.app{padding:14px 10px 30px}.hide-sm{display:none}table{min-width:0}.hd{flex-direction:column}.stats .stat{min-width:calc(33% - 6px);padding:8px}.stat b{font-size:17px}.form{grid-template-columns:1fr}.mob-meta{display:block}.pcell{min-width:0}}
-</style></head><body>
+</style>
+<link rel="stylesheet" href="/assets/ui.css"></head><body>
 <div class="app">
   <div class="hd">
     <div><h1><span id="appTitle">求职台账</span> <span class="ver">进度概率版</span></h1>
@@ -271,34 +272,132 @@ function norm(d){
 }
 let D = norm(FALLBACK_D);
 let API_BASE = null, serverMode = false, hasBackup = false;
+let serverVersion = null;              // 服务端版本号：整份写入时带上，过期即冲突，不覆盖别人的新数据
+let writeChain = Promise.resolve();    // 所有写盘串行排队，绝不并发
 let ui = {ch:"all", status:"", kw:"", sort:"smart", quick:"all", prog:"all", fam:"all"};
 function recalcAll(){ KEYS.forEach(k => D[k].forEach(r => PE.apply(r))); }
 let opened = new Set(), lastDeleted = null, saveTimer = null, confirmCb = null;
 
 // ---------- 连接 / 落盘 ----------
-function setConn(){
-  const c = document.getElementById("conn");
-  if(serverMode){ c.className = "conn on"; c.textContent = "● 已连本地服务 · 改动实时写回 CSV/JSON"; }
-  else { c.className = "conn off"; c.textContent = "○ 离线模式 · 改动仅存本机"; }
+// 一条铁律：页面显示「已保存」必须等于「磁盘上真的有了」。
+// 所以每次写都等服务端回执；失败就明确报错并给重试，绝不把 serverMode 一关了之——
+// 一关就等于后面所有增删改查都只写进浏览器本地，看起来成功、实际上全丢。
+function setConn(state){
+  const c = document.getElementById("conn"); if(!c) return;
+  if(state === "pending"){
+    c.className = "conn"; c.textContent = "● 正在写盘…";
+    c.onclick = null; return;
+  }
+  if(state === "on"){
+    c.className = "conn on";
+    c.textContent = "● 已落盘 · " + (serverVersion || "");
+    c.onclick = null; return;
+  }
+  if(state === "retry"){
+    c.className = "conn off"; c.textContent = "○ 写盘失败 · 点此重试";
+    c.onclick = () => flushPending(); return;
+  }
+  c.className = "conn off"; c.textContent = "○ 离线模式 · 改动仅存本机";
+  c.onclick = () => init();
 }
+let pendingFlush = null;
+function flushPending(){ const f = pendingFlush; if(f) f(); }
+
 let toastTimer = null;
 function toast(msg, err, actionLabel, actionFn){
   const t = document.getElementById("toast");
   t.innerHTML = "<span>" + h(msg) + "</span>";
   if(actionLabel){ const b = document.createElement("button"); b.textContent = actionLabel; b.onclick = () => { actionFn(); hideToast(); }; t.appendChild(b); }
   t.className = "toast show" + (err ? " err" : "");
-  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, actionLabel ? 6000 : 2400);
+  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, actionLabel ? 8000 : 2400);
 }
 function hideToast(){ document.getElementById("toast").className = "toast"; }
+
+async function apiCall(method, path, body){
+  const r = await fetch(API_BASE + path, {
+    method, cache: "no-store",
+    headers: body ? {"Content-Type": "application/json"} : undefined,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  let j = null; try { j = await r.json(); } catch(e){}
+  if(r.status === 409 && j && j.code === "VERSION_CONFLICT"){
+    const e = new Error(j.err || "数据已被更新"); e.code = "VERSION_CONFLICT"; e.payload = j; throw e;
+  }
+  if(!r.ok || !j || !j.ok){
+    const e = new Error((j && j.err) || ("HTTP " + r.status));
+    e.code = (j && j.code) || "HTTP"; e.status = r.status; throw e;
+  }
+  return j;
+}
+function remember(j){ if(j && j.version) serverVersion = j.version; }
+
+// 记录级写入：只把这一条发给服务端；成功后用服务端返回的记录替换本地那条，
+// 保证「界面上的」和「磁盘上的」是同一份（概率/族/字段规整都由服务端算完回传）。
+function writeRecord(method, path, body, onOk, label, tolerant){
+  if(API_BASE == null || !serverMode){
+    toast((label || "改动") + " 未落盘：当前是离线模式", true, "重新连接", () => init());
+    return Promise.resolve(false);
+  }
+  setConn("pending");
+  const task = () => apiCall(method, path, body).then(j => {
+    remember(j);
+    try { if(onOk) onOk(j); } catch(e){}
+    setConn("on");
+    if(j.csv_warning) toast((label || "已保存") + "（CSV 未更新：" + j.csv_warning + "）", true);
+    else if(label) toast(label + " · 已落盘");
+    pendingFlush = null;
+    return true;
+  }).catch(e => {
+    // 删除时服务端已经没有这条，等价于目标达成，不当失败
+    if(tolerant && (e.code === "NOT_FOUND" || e.status === 404)){
+      setConn("on"); if(label) toast(label + " · 已落盘"); pendingFlush = null; return true;
+    }
+    setConn("retry");
+    pendingFlush = () => writeRecord(method, path, body, onOk, label, tolerant);
+    toast("写盘失败：" + e.message + "（这条改动还没落盘）", true, "重试", pendingFlush);
+    return false;
+  });
+  writeChain = writeChain.then(task, task);
+  return writeChain;
+}
+
+// 整份写入：只给「导入 JSON / 恢复备份」这类批量操作用。
+// 带 baseVersion，服务端有更新时返回冲突 → 以服务端为准重新载入，绝不用旧快照盖掉新数据。
+let pendingBulk = null;
 function persist(msg){
   try{ localStorage.setItem(LS_DATA, JSON.stringify(D)); }catch(e){}
-  if(!serverMode){ setConn(); if(msg) toast(msg + "（离线：请点「备份 JSON」保存）", true); return; }
+  if(API_BASE == null || !serverMode){
+    setConn("off");
+    if(msg) toast(msg + "（离线：仅存本机，可用「备份 JSON」导出）", true);
+    return Promise.resolve(false);
+  }
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    fetch(API_BASE + "/api/data", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({data:D})})
-      .then(r => r.json()).then(j => { if(!j.ok) throw new Error(j.err || "写盘失败"); setConn(); if(msg) toast(msg + " · CSV/JSON 已更新"); })
-      .catch(() => { serverMode = false; setConn(); toast("写盘失败，改动仅存本机，请点「备份 JSON」", true); });
-  }, 220);
+  return new Promise(resolve => {
+    saveTimer = setTimeout(() => {
+      setConn("pending");
+      const body = {data: D, baseVersion: serverVersion};
+      const task = () => apiCall("PUT", "/api/data", body).then(j => {
+        remember(j); setConn("on"); pendingBulk = null;
+        if(j.csv_warning) toast((msg || "已保存") + "（CSV 未更新：" + j.csv_warning + "）", true);
+        else if(msg) toast(msg + " · 已落盘");
+        resolve(true);
+      }).catch(async e => {
+        if(e.code === "VERSION_CONFLICT"){
+          try{
+            const cur = await apiCall("GET", "/api/data");
+            D = norm(cur.data); remember(cur); recalcAll(); renderAll(); setConn("on");
+            toast("服务端已有更新的数据，已重新载入；请确认刚才的改动是否需要重做", true);
+          }catch(e2){ setConn("retry"); }
+          resolve(false); return;
+        }
+        setConn("retry");
+        pendingBulk = () => persist(msg);
+        toast("写盘失败：" + e.message + "（改动还没落盘）", true, "重试", pendingBulk);
+        resolve(false);
+      });
+      writeChain = writeChain.then(task, task);
+    }, 200);
+  });
 }
 // 标题 / 副标题 / 文件名占位：全部由 __WB_CONFIG__ 注入，模板里不留实例值
 function applyCfgChrome(){
@@ -329,13 +428,16 @@ async function init(){
   for(const b of cands){
     try{
       const r = await fetch(b + "/api/data?t=" + Date.now(), {cache:"no-store"});
-      if(r.ok){ const j = await r.json(); if(j && j.ok && j.data){ API_BASE = b; serverMode = true; hasBackup = !!j.hasBackup; D = norm(j.data); break; } }
+      if(r.ok){ const j = await r.json(); if(j && j.ok && j.data){
+        API_BASE = b; serverMode = true; hasBackup = !!j.hasBackup;
+        serverVersion = j.version || null;   // 拿到版本号，后面整份写入靠它防覆盖
+        D = norm(j.data); break; } }
     }catch(e){}
   }
   if(!serverMode){
     try{ const c = localStorage.getItem(LS_DATA); if(c) D = norm(JSON.parse(c)); }catch(e){}
   }
-  setConn(); renderAll();
+  setConn(serverMode ? "on" : "off"); renderAll();
 }
 function applyTheme(){
   let t = "dark"; try{ t = localStorage.getItem(LS_THEME) || "dark"; }catch(e){}
@@ -625,14 +727,23 @@ function closeAsk(){ document.getElementById("confirmBox").hidden = true; confir
 
 function del(id){
   const x = find(id); if(!x) return;
-  ask("删除这条记录？", "「" + (x.r.company || "未命名") + "」将从列表和 CSV 中移除。\n删除后可在提示条点「撤销」，或用「↺ 恢复上次备份」找回。", () => {
-    D[x.k] = D[x.k].filter(r => r.id !== id);
-    lastDeleted = {rec:x.r, k:x.k, i:x.i};
-    opened.delete(id); renderAll(); persist("已删除「" + (x.r.company || "记录") + "」");
-    toast("已删除「" + (x.r.company || "记录") + "」", false, "撤销", () => {
+  const k = x.k, rec = x.r, name = rec.company || "记录";
+  ask("删除这条记录？", "「" + (name || "未命名") + "」将从列表和 CSV 中移除。\n删除后可在提示条点「撤销」，或用「↺ 恢复上次备份」找回。", () => {
+    D[k] = D[k].filter(r => r.id !== id);
+    lastDeleted = {rec, k, i:x.i};
+    opened.delete(id); renderAll();
+    writeRecord("DELETE", "/api/data/" + encodeURIComponent(k) + "/" + encodeURIComponent(id),
+      null, null, "已删除「" + name + "」", true);
+    toast("已删除「" + name + "」", false, "撤销", () => {
       if(!lastDeleted) return;
-      const o = lastDeleted; D[o.k].splice(Math.min(o.i, D[o.k].length), 0, o.rec);
-      lastDeleted = null; recalcAll(); renderAll(); persist("已撤销删除");
+      const o = lastDeleted;
+      D[o.k].splice(Math.min(o.i, D[o.k].length), 0, o.rec);
+      lastDeleted = null; recalcAll(); renderAll();
+      writeRecord("POST", "/api/data/" + encodeURIComponent(o.k), {record:o.rec}, j => {
+        const arr = D[o.k] || []; const i = arr.findIndex(r => r.id === o.rec.id);
+        if(i >= 0 && j.record) arr[i] = Object.assign({}, j.record);
+        recalcAll(); renderAll();
+      }, "已撤销删除");
     });
   });
 }
@@ -700,17 +811,40 @@ function collectForm(){
 function saveForm(){
   const v = collectForm(); if(!v) return;
   const k = KEYS.indexOf(v.ch) >= 0 ? v.ch : KEYS[0]; delete v.ch;
+  const syncBack = (kk, id) => j => {
+    const arr = D[kk] || []; const i = arr.findIndex(r => r.id === id);
+    if(i >= 0 && j.record) arr[i] = Object.assign({}, j.record);   // 用服务端规整后的记录回填
+    recalcAll(); renderAll();
+  };
   if(editId){
     const x = find(editId); if(!x) return;
-    if(x.k !== k){ D[x.k] = D[x.k].filter(r => r.id !== editId); D[k].push(Object.assign({}, x.r, v, {source:k})); }
+    const oldK = x.k;
+    const moved = oldK !== k;
+    if(moved){ D[oldK] = D[oldK].filter(r => r.id !== editId); D[k].push(Object.assign({}, x.r, v, {source:k})); }
     else Object.assign(x.r, v);
+    document.getElementById("modal").hidden = true;
+    recalcAll(); renderAll();
+    if(moved){
+      // 换渠道 = 旧渠道删掉 + 新渠道建一条；两步都走记录级接口，失败会提示重试
+      writeRecord("DELETE", "/api/data/" + encodeURIComponent(oldK) + "/" + encodeURIComponent(editId),
+        null, null, null, true);
+      writeRecord("POST", "/api/data/" + encodeURIComponent(k),
+        {record:Object.assign({}, x.r, v, {id:editId, source:k})},
+        syncBack(k, editId), "已保存修改（换到「" + (CH[k] || k) + "」）");
+    } else {
+      writeRecord("PATCH", "/api/data/" + encodeURIComponent(k) + "/" + encodeURIComponent(editId),
+        {patch:v}, syncBack(k, editId), "已保存修改");
+    }
   } else {
     const id = k.slice(0,2) + "_u" + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
-    D[k].push(Object.assign({id, source:k, type:(TYPE_LABEL[k] || ""),
-      captured_at:new Date().toISOString(), batch:(CH_TYPE[k] === "campus" ? (CSV_LABEL[k] || "") : ""), messages:[], prob_reason:[], prob_flag:""}, v));
+    const rec = Object.assign({id, source:k, type:(TYPE_LABEL[k] || ""),
+      captured_at:new Date().toISOString(), batch:(CH_TYPE[k] === "campus" ? (CSV_LABEL[k] || "") : ""),
+      messages:[], prob_reason:[], prob_flag:""}, v);
+    D[k].push(rec);
+    document.getElementById("modal").hidden = true;
+    recalcAll(); renderAll();
+    writeRecord("POST", "/api/data/" + encodeURIComponent(k), {record:rec}, syncBack(k, id), "已新增记录");
   }
-  document.getElementById("modal").hidden = true;
-  recalcAll(); renderAll(); persist(editId ? "已保存修改" : "已新增记录");
 }
 
 // ---------- 导入 / 导出 / 备份 ----------
@@ -831,14 +965,25 @@ tb.addEventListener("change", e => {
   x.r.status = e.target.value; PE.apply(x.r);
   const after = Number(x.r.prob) || 0;
   renderAll();
-  persist("状态已改为「" + e.target.value + "」· 概率 " + before + "% → " + after + "%");
+  // 只改这一条的状态字段，不整份覆盖
+  writeRecord("PATCH", "/api/data/" + encodeURIComponent(x.k) + "/" + encodeURIComponent(x.r.id),
+    {patch:{status:x.r.status}}, j => {
+      const arr = D[x.k] || []; const i = arr.findIndex(r => r.id === x.r.id);
+      if(i >= 0 && j.record) arr[i] = Object.assign({}, j.record);
+      recalcAll(); renderAll();
+    }, "状态已改为「" + e.target.value + "」· 概率 " + before + "% → " + after + "%");
 });
 let noteTimer = null;
 tb.addEventListener("input", e => {
   if(!e.target.matches("textarea.note")) return;
   const x = find(e.target.dataset.note); if(!x) return;
   x.r.note = e.target.value;
-  clearTimeout(noteTimer); noteTimer = setTimeout(() => persist(""), 500);
+  const k = x.k, id = x.r.id;
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => {
+    writeRecord("PATCH", "/api/data/" + encodeURIComponent(k) + "/" + encodeURIComponent(id),
+      {patch:{note:x.r.note}}, null, "备注已保存");
+  }, 600);
 });
 document.addEventListener("keydown", e => {
   if(e.key === "Escape"){ document.getElementById("modal").hidden = true; closeAsk(); }

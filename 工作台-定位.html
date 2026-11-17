@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>岗位判断与分析</title>
+<style>
+:root{
+  --bg:#14161a;--panel:#1c1f26;--panel2:#232731;--line:#2e333e;--line2:#39404d;
+  --ink:#e8ebf1;--mut:#8b93a3;--dim:#6f7889;--accent:#7aa8ff;--ok:#5fd39a;--warn:#f0be5f;
+  --bad:#e0705f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:13px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+button,input,textarea{font-family:inherit}
+.wrap{margin:0 auto;padding:18px 18px 40px;max-width:1400px}
+
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+h1{margin:0;font-size:17px;letter-spacing:.2px}
+.sub{margin:5px 0 0;font-size:11.5px;color:var(--mut);line-height:1.7;max-width:820px}
+.ro{border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-size:10.5px;
+  color:var(--mut);white-space:nowrap;flex-shrink:0}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  margin-top:14px;overflow:hidden}
+.card-h{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line)}
+.card-h h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.2px}
+.card-h .ix{flex-shrink:0;width:19px;height:19px;border-radius:50%;border:1px solid rgba(122,168,255,.4);
+  color:#a9c7ff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.card-h .meta{flex:1;min-width:0;font-size:10.5px;color:var(--dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb{border:1px solid var(--line);background:var(--panel2);color:#b6c0cf;border-radius:7px;
+  padding:3px 9px;font-size:11px;cursor:pointer;flex-shrink:0}
+.tb:hover{border-color:var(--line2);color:#e3e9f2}
+.card-b{padding:13px 14px}
+
+/* 画像 */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px 11px}
+label{display:flex;flex-direction:column;gap:3px;min-width:0}
+label span{font-size:10.5px;color:var(--dim)}
+label input{border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  border-radius:7px;padding:5px 8px;font-size:12px;outline:none;min-width:0}
+label input:focus{border-color:rgba(122,168,255,.55)}
+.row{display:flex;gap:10px;margin-top:11px;align-items:flex-start}
+.row>b{flex-shrink:0;width:56px;font-size:10.5px;color:var(--dim);font-weight:600;padding-top:5px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;flex:1;min-width:0}
+.tag{border:1px solid var(--line);background:var(--panel2);color:#b6c0cf;border-radius:5px;
+  padding:1px 7px;font-size:11px;line-height:1.8;white-space:nowrap}
+textarea{flex:1;min-width:0;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  border-radius:7px;padding:6px 8px;font-size:12px;line-height:1.65;resize:vertical;outline:none}
+textarea:focus{border-color:rgba(122,168,255,.55)}
+.acts{display:flex;align-items:center;gap:11px;margin-top:12px;flex-wrap:wrap}
+.btn{border:1px solid var(--line2);background:var(--panel2);color:#c3ccdb;border-radius:8px;
+  padding:6px 13px;font-size:12px;cursor:pointer}
+.btn:hover{border-color:rgba(122,168,255,.5);color:#e3e9f2}
+.btn.pri{border-color:rgba(122,168,255,.55);background:rgba(122,168,255,.14);color:#dce9ff;font-weight:600}
+.btn.pri:hover{background:rgba(122,168,255,.22)}
+.btn:disabled{opacity:.45;cursor:default}
+.warn{font-size:10.5px;color:#a08a5e;line-height:1.6}
+.okmsg{font-size:10.5px;color:var(--ok)}
+
+/* 步骤条 */
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.stp{display:flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:20px;
+  padding:2px 9px;font-size:10.5px;color:var(--mut);background:var(--panel2)}
+.stp.done{border-color:rgba(95,211,154,.35);color:#9ad9b8}
+.stp.done .dot{background:var(--ok)}
+.stp .dot{width:5px;height:5px;border-radius:50%;background:#5a6270}
+
+/* 表格 */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:9px}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:12px}
+th{text-align:left;font-weight:600;font-size:10.5px;color:var(--dim);padding:8px 10px;
+  border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid rgba(46,51,62,.6);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer;transition:background .1s}
+tbody tr:hover{background:rgba(122,168,255,.07)}
+tbody tr.on{background:rgba(122,168,255,.13)}
+td.name{font-weight:600;white-space:nowrap}
+td.name i{font-style:normal;font-weight:400;font-size:10px;color:var(--dim);margin-left:5px}
+.band{display:inline-block;min-width:17px;text-align:center;border-radius:5px;padding:0 5px;
+  font-size:10.5px;font-weight:600;line-height:1.65;border:1px solid transparent}
+.band.S{color:#f0be5f;border-color:rgba(240,190,95,.4);background:rgba(240,190,95,.12)}
+.band.A{color:#5fd39a;border-color:rgba(95,211,154,.35);background:rgba(95,211,154,.1)}
+.band.B{color:#8fb3e8;border-color:rgba(122,168,255,.35);background:rgba(122,168,255,.1)}
+.band.C{color:#9aa3b3;border-color:var(--line2);background:rgba(255,255,255,.04)}
+.band.D{color:#e0705f;border-color:rgba(224,112,95,.35);background:rgba(224,112,95,.1)}
+.band.NA{color:#6f7889;border-color:var(--line);border-style:dashed;background:transparent;min-width:38px}
+.score{font-variant-numeric:tabular-nums;font-weight:600;font-size:13px}
+.score.na{color:#5b6472;font-weight:400;font-size:11px}
+.dims{display:inline-flex;gap:2.5px;align-items:center}
+.d{display:inline-block;width:20px;height:5px;background:#2a2f3a;border-radius:3px;overflow:hidden}
+.d b{display:block;height:100%;background:#7aa8ff}
+.num{font-variant-numeric:tabular-nums;color:#b6c0cf}
+.num.mut{color:#5b6472}
+.lnk{color:#8fb3e8;text-decoration:none;font-size:11px;white-space:nowrap}
+.lnk:hover{color:#cfe0ff;text-decoration:underline}
+.note{font-size:10px;color:var(--dim);margin-top:9px;line-height:1.7}
+.note code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 4px;
+  font-size:10px;color:#a8b2c2}
+
+details.more{margin-top:12px;border:1px dashed var(--line);border-radius:9px;background:rgba(255,255,255,.014)}
+details.more>summary{cursor:pointer;list-style:none;padding:8px 12px;font-size:11.5px;color:#8b95a4;
+  display:flex;align-items:center;gap:6px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"▸";font-size:8px;color:#5f6a7a;transition:transform .15s}
+details.more[open]>summary::before{transform:rotate(90deg)}
+details.more>summary:hover{color:#c3ccdb}
+details.more .body{padding:0 12px 11px}
+
+/* 详情视图内容分节 */
+.dsec{margin-bottom:15px}
+.dsec h4{margin:0 0 7px;font-size:10.5px;color:var(--dim);font-weight:600;letter-spacing:.3px}
+.kv{display:grid;grid-template-columns:88px 1fr;gap:5px 9px;font-size:11.5px}
+.kv .k{color:var(--dim)}
+.kv .v{color:#cfd7e3;min-width:0}
+.txt{font-size:11.5px;color:#cfd7e3;line-height:1.75;overflow-wrap:anywhere}
+.bar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:11px}
+.bar .bl{width:64px;flex-shrink:0;color:#8b93a3}
+.bar .bt{flex:1;height:5px;background:#2a2f3a;border-radius:3px;overflow:hidden;min-width:40px}
+.bar .bt b{display:block;height:100%;background:#7aa8ff}
+.bar .bv{width:32px;text-align:right;color:#cfd7e3;font-variant-numeric:tabular-nums;flex-shrink:0}
+.dact{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+/* 图谱内容就地展开：能力全景 / 门槛项 / 能力项 / JD 原文 */
+.atlas-tag{font-size:11.5px;color:#a8b2c2;line-height:1.7;margin:0 0 9px}
+.atlas-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 11px}
+.atlas-kpis div{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 7px}
+.atlas-kpis b{display:block;font-size:13px;color:#e7ecf5;font-variant-numeric:tabular-nums}
+.atlas-kpis span{font-size:9.5px;color:var(--dim)}
+.sub{margin:9px 0 5px;font-size:10px;color:var(--dim);font-weight:600}
+.chips2{display:flex;flex-wrap:wrap;gap:5px}
+.chip2{display:inline-flex;align-items:center;gap:4px;max-width:100%;font-size:10.5px;line-height:1.5;
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:2px 7px;color:#c6cfdd;
+  overflow-wrap:anywhere}
+.chip2.mine{border-color:#3e6b4e;color:#9fd8ad}
+.chip2 i{font-style:normal;color:#7aa8ff;font-variant-numeric:tabular-nums}
+.mini-tbl{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed}
+.mini-tbl th,.mini-tbl td{border-bottom:1px solid var(--line);padding:5px 4px;text-align:left;
+  vertical-align:top;overflow-wrap:anywhere;color:#c6cfdd}
+.mini-tbl th{color:var(--dim);font-weight:600;width:88px}
+.jd-card{border:1px solid var(--line);border-radius:6px;padding:7px 8px;margin:6px 0;background:var(--panel2)}
+.jd-card b{font-size:11px;color:#e7ecf5}
+.jd-card p{margin:3px 0;font-size:10.5px;color:#a8b2c2;line-height:1.6}
+.warnline{font-size:10.5px;color:#e5b567;line-height:1.7;margin:6px 0}
+.dfoot{padding:10px 14px;border-top:1px solid var(--line);font-size:10.5px;color:var(--dim);
+  line-height:1.7;flex-shrink:0}
+.empty{padding:26px;text-align:center;color:var(--dim);font-size:12px;line-height:1.9}
+.empty code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:#a8b2c2}
+@media(max-width:760px){
+  .wrap{padding:14px 12px 32px}
+}
+/* 工作台内换页：详情占主区域，列表/画像隐藏；不弹窗、不跳独立页面 */
+.detail-view{display:none}
+body.detail-mode .wrap>header,
+body.detail-mode .wrap>.card:not(#detailView){display:none}
+body.detail-mode #detailView{display:block}
+body.detail-mode .wrap{padding-top:14px}
+#detailView .card-h{gap:10px}
+#detailView .dfoot{margin:-13px -14px 0;padding:11px 14px;border-top:1px solid var(--line);
+  border-radius:0 0 12px 12px}
+/* WorkBuddy 深度分析任务卡 */
+.deepbox{margin-top:10px;border:1px solid var(--line2);border-radius:9px;background:rgba(122,168,255,.05);
+  padding:10px 12px}
+.deep-h{display:flex;align-items:center;gap:9px;font-size:11.5px}
+.deep-h b{color:#cfe0ff}
+.deep-h span{font-size:10.5px;color:var(--warn);margin-left:auto}
+.deep-h span.done{color:var(--ok)}
+.deep-h span.fail{color:var(--bad)}
+.deep-body{margin-top:7px;font-size:11px;color:#c3ccdb;line-height:1.75}
+.deep-act{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.deep-act code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:2px 6px;
+  font-size:10.5px;color:#a8b2c2;user-select:all}
+.hidden{display:none !important}
+.empty{border:1px dashed var(--line2);border-radius:9px;padding:16px;text-align:center;
+  font-size:11.5px;color:var(--dim)}
+.hint{font-size:10.5px;color:var(--dim);line-height:1.65}
+.na-rank{color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums}
+.whyline{margin-top:2px;font-size:10px;color:#7c8494;line-height:1.5;font-weight:400}
+select.tb{appearance:none;padding-right:16px;background-image:linear-gradient(45deg,transparent 50%,#8b93a3 50%),linear-gradient(135deg,#8b93a3 50%,transparent 50%);
+  background-position:calc(100% - 9px) 50%,calc(100% - 5px) 50%;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+</style>
+<link rel="stylesheet" href="/assets/ui.css"></head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>岗位判断与分析</h1>
+      <p class="sub">先填一次画像，再看这些方向在我所在城市的市场上对我友不友好。
+        「市场友好度」是族级指标（这批岗位整体放宽到什么程度），不是你个人能打几分；
+        单条岗位能不能投，由投递段的 dry-run 决定。两者量纲不同，不要混着看。</p>
+    </div>
+    <span class="ro" id="stamp">读取中…</span>
+  </header>
+
+  <section class="card">
+    <div class="card-h">
+      <span class="ix">1</span>
+      <h2>我的情况</h2>
+      <span class="meta" id="pMeta">读取画像…</span>
+      <button class="tb" id="btnFold">收起</button>
+    </div>
+    <div class="card-b" id="pBody">
+      <div class="grid">
+        <label><span>年龄</span><input id="fAge" type="number" min="14" max="70" placeholder="24"></label>
+        <label><span>学历</span><input id="fEdu" placeholder="本科"></label>
+        <label><span>专业</span><input id="fMajor" placeholder="软件工程"></label>
+        <label><span>届别</span><input id="fGrad" placeholder="2026"></label>
+        <label><span>城市</span><input id="fCity" placeholder="城市"></label>
+        <label><span>工作年限</span><input id="fYears" type="number" min="0" max="40" step="0.5" placeholder="0"></label>
+        <label><span>期望薪资</span><input id="fSalary" placeholder="7K 起"></label>
+        <label><span>备注</span><input id="fNotes" placeholder="可出差 / 驻场意愿等"></label>
+      </div>
+      <div class="row"><b>技术栈</b><div class="tags" id="fStack"><span class="tag">—</span></div></div>
+      <div class="row"><b>岗位想法</b><textarea id="fIntent" rows="2"
+        placeholder="例如：想投 IT 技术支持，偏稳定，能接受出差驻场"></textarea></div>
+      <div class="acts">
+        <button class="btn pri" id="btnSave">保存画像</button>
+        <button class="btn" id="btnAnalyze">开始分析</button>
+        <button class="btn" id="btnDeep" title="按岗位调研 SOP 交给 WorkBuddy 会话做真正的解读，结果回写到这里">交给 WorkBuddy 深析</button>
+        <a class="btn" href="工作台-档案.html" style="text-decoration:none">简历与完整档案 ↗</a>
+        <span class="warn">改画像会同时改变全部投递方向的筛选口径（每个方向都引用这一份）</span>
+        <span class="okmsg" id="saveMsg" hidden></span>
+      </div>
+      <div class="hint" id="anaMsg" style="margin-top:7px">「开始分析」是本地秒级打分（市场 × 技能 × 薪资 × 想法），先给基线；「交给 WorkBuddy 深析」按 SOP 由会话真正读数据、解读你的岗位想法，结果回写后会补到这里。</div>
+      <div class="deepbox" id="deepBox" hidden>
+        <div class="deep-h"><b>WorkBuddy 深度分析</b><span id="deepState">未提交</span></div>
+        <div class="deep-body" id="deepBody"></div>
+        <div class="deep-act" id="deepAct"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-h">
+      <span class="ix">2</span>
+      <h2>分析结果</h2>
+      <span class="meta" id="anaMeta">还没分析过</span>
+      <select class="tb" id="anaScope" title="分析范围">
+        <option value="active">只看在投方向</option>
+        <option value="all">全部岗位族</option>
+      </select>
+    </div>
+    <div class="card-b" id="anaBody">
+      <div class="empty" id="anaEmpty">点上面「开始分析」，跑完这里出推荐：每个方向给综合分、技能命中率、缺口和结论。</div>
+      <div class="hint" id="anaAtlasHint" hidden>点任意一行，切到工作台内的详情视图看该族完整内容：门槛项、能力项、原文摘录、门槛分布、薪资发展、JD 原文与样本。</div>
+      <div class="tw" id="anaWrap" hidden>
+        <table>
+          <thead><tr>
+            <th style="width:26px">#</th>
+            <th style="width:150px">方向</th>
+            <th style="width:64px">综合</th>
+            <th style="width:74px">市场</th>
+            <th style="width:74px">技能命中</th>
+            <th style="width:62px">中位薪</th>
+            <th style="width:52px">成长</th>
+            <th>结论</th>
+          </tr></thead>
+          <tbody id="anaRows"></tbody>
+        </table>
+      </div>
+      <div class="hint" id="anaFoot" style="margin-top:9px" hidden></div>
+    </div>
+  </section>
+
+  <section class="card" id="famCard">
+    <div class="card-h">
+      <span class="ix">3</span>
+      <h2>市场全景 · 全部方向</h2>
+      <span class="meta" id="famMeta">读取中…</span>
+      <button class="tb" id="btnFam">展开</button>
+    </div>
+    <div class="card-b hidden" id="famBody">
+      <div class="steps" id="steps"></div>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th style="width:150px">岗位族</th>
+            <th style="width:44px">档</th>
+            <th style="width:88px">市场友好度</th>
+            <th style="width:92px">四维</th>
+            <th style="width:74px">门槛超限</th>
+            <th style="width:74px">中位薪</th>
+            <th style="width:52px">在招</th>
+            <th style="width:60px">简历</th>
+          </tr></thead>
+          <tbody id="tb"><tr><td colspan="8" class="empty">读取中…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="note">
+        点任意一行看该族的完整判断与对应简历。四维依次是 <b>门槛通过率 / 技能适配 / 成长空间 / 薪资水平</b>。
+        「门槛超限」指这批 JD 里要求高于你当前条件的条数，越少越好。
+        没跑过市场采集的方向标「无样本」，不补分也不猜。
+      </div>
+
+      <details class="more" id="histWrap">
+        <summary>历史全景 · 其余 <span id="histN">—</span> 个方向（不在当前投递口径内，仅作参考）</summary>
+        <div class="body">
+          <div class="tw">
+            <table>
+              <thead><tr>
+                <th style="width:150px">岗位族</th><th style="width:44px">档</th>
+                <th style="width:88px">市场友好度</th><th style="width:92px">四维</th>
+                <th style="width:74px">门槛超限</th><th style="width:74px">中位薪</th>
+                <th style="width:52px">在招</th><th style="width:60px">简历</th>
+              </tr></thead>
+              <tbody id="tbHist"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+  <!-- 工作台内换页：点分析结果/市场全景的任一行，主区域切到这里 -->
+  <section class="card detail-view" id="detailView">
+    <div class="card-h">
+      <span class="ix">2·详情</span>
+      <h2 id="dTitle">—</h2>
+      <span class="meta" id="dCrumb">岗位判断与分析 / 分析结果</span>
+      <button class="tb" id="dClose">← 返回结果</button>
+    </div>
+    <div class="card-b" id="dBody"></div>
+    <div class="dfoot" id="dFoot"></div>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function API(p, opt){
+  try{
+    const r = await fetch(p + (p.indexOf('?')>=0?'&':'?') + 't=' + Date.now(),
+      Object.assign({cache:'no-store'}, opt||{}));
+    return await r.json();
+  }catch(e){ return null; }
+}
+function fmtDate(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d)) return '';
+  return d.toLocaleDateString('zh-CN');
+}
+
+const S = {profile:null, fams:null, cur:null, atlasSeq:0};
+
+function bandCls(b){ return (b && 'SABCD'.indexOf(b) >= 0) ? b : 'NA'; }
+function dimsHtml(m){
+  if(!m) return '<span class="num mut">—</span>';
+  const d = m.dims || {};
+  const seq = [['thr','门槛'],['skill','技能'],['growth','成长'],['salary','薪资']];
+  return '<span class="dims">' + seq.map(([k,label]) =>
+    '<span class="d" title="' + label + ' ' + Math.round(d[k]||0) + '">' +
+    '<b style="width:' + Math.max(0,Math.min(100, d[k]||0)) + '%"></b></span>').join('') + '</span>';
+}
+function barsHtml(d, total){
+  const ent = Object.entries(d || {}).sort((a,b) => b[1]-a[1]).slice(0,6);
+  if(!ent.length) return '<div class="txt" style="color:var(--dim)">无样本</div>';
+  return ent.map(([k,v]) => {
+    const w = Math.max(2, Math.min(100, Math.round((v / (total || 1)) * 100)));
+    return '<div class="bar"><span class="bl">' + esc(k) + '</span>' +
+      '<span class="bt"><b style="width:' + w + '%"></b></span>' +
+      '<span class="bv">' + v + '</span></div>';
+  }).join('');
+}
+
+// 图谱内容：只展示索引里真实存在的字段；没有 JD 原文的族明确标注参考度低
+function atlasHtml(det, mine){
+  if(!det) return '';
+  const k = det.kpis || {};
+  const d = det.dims || {};
+  const req = det.req || {};
+  const dimNames = [['thr','门槛可达'],['skill','技能适配'],['growth','成长空间'],['salary','薪资水平']];
+  const dims = dimNames.map(([key,label]) =>
+    '<div class="bar"><span class="bl">' + label + '</span>' +
+    '<span class="bt"><b style="width:' + Math.max(1,Math.min(100, Math.round(d[key]||0))) + '%"></b></span>' +
+    '<span class="bv">' + Math.round(d[key]||0) + '</span></div>').join('');
+
+  const gateCats = Object.entries(req.gates || {}).map(([cat,items]) => {
+    const chips = Object.entries(items || {}).sort((a,b) => b[1]-a[1]).slice(0,8)
+      .map(([txt,n]) => '<span class="chip2">' + esc(txt) + ' <i>×' + n + '</i></span>').join('');
+    return chips ? '<div class="sub">' + esc(cat) + '</div><div class="chips2">' + chips + '</div>' : '';
+  }).filter(Boolean).join('');
+
+  const tierName = {core:'核心（≥50% JD 提到）', common:'常见（20–50%）', plus:'加分（<20%）'};
+  const tiers = Object.entries(req.tiers || {}).map(([tier,items]) => {
+    const chips = (items || []).slice(0,20).map(x =>
+      '<span class="chip2' + (x.mine ? ' mine' : '') + '" title="' +
+      esc((x.lvl === 'must' ? '硬性要求' : '优先/加分') + ' · ' + (x.n||0) + ' 条 JD') + '">' +
+      esc(x.name) + ' <i>' + (x.rate||0) + '%</i></span>').join('');
+    return chips ? '<div class="sub">' + (tierName[tier] || esc(tier)) +
+      ' · 绿框=你已有</div><div class="chips2">' + chips + '</div>' : '';
+  }).filter(Boolean).join('');
+
+  const phrases = Object.entries(req.phrases || {}).slice(0,6)
+    .map(([txt,n]) => '<span class="chip2">' + esc(txt) + ' <i>×' + n + '</i></span>').join('');
+  const nSkills = (det.narrative_skills || []).map(([a,b,c]) =>
+    '<tr><td>' + esc(a) + '</td><td>' + esc(b) + '</td><td>' + esc(c) + '</td></tr>').join('');
+
+  const risk = (det.risk || []).map(r => '<li>' + esc(r) + '</li>').join('');
+  const jdN = (det.jd_cases || []).length;
+  const jd = (det.jd_cases || []).slice(0,5).map(c =>
+    '<div class="jd-card"><b>' + esc(c.title) + '</b>' +
+    '<p>' + esc(c.company) + ' · ' + esc(c.salary) + ' · ' + esc(c.exp) + ' · ' + esc(c.edu) + '</p>' +
+    ((c.skills_flat||[]).length ? '<p>能力表述：' + esc((c.skills_flat||[]).slice(0,8).join('、')) + '</p>' : '') +
+    ((c.duties||[]).length ? '<p>职责：' + esc((c.duties||[]).slice(0,3).join(' / ')) + '</p>' : '') +
+    '</div>').join('');
+
+  const lowSample = jdN <= 1
+    ? '<div class="warnline">JD 原文只有 ' + jdN + ' 条：' + (jdN || 0) + '/' + (jdN || 1) +
+      ' 就是 100%，参考度低，不能当作该族全貌。</div>' : '';
+
+  return '<div class="dsec"><h4>能力全景 · ' + esc(det.label) + '</h4>' +
+      '<p class="atlas-tag">' + esc(det.tagline || '—') + '</p>' +
+      '<div class="atlas-kpis">' +
+        '<div><b>' + (k.n||0) + '</b><span>样本</span></div>' +
+        '<div><b>' + (k.open||0) + '/' + (k.n_excl_intern||0) + '</b><span>可投档</span></div>' +
+        '<div><b>' + (k.open_rate==null?'—':k.open_rate+'%') + '</b><span>可投率</span></div>' +
+        '<div><b>' + (k.salary_open_median==null?'—':k.salary_open_median+'K') + '</b><span>可投薪资中位</span></div>' +
+        '<div><b>' + (k.block||0) + '</b><span>门槛超限</span></div>' +
+        '<div><b>' + (req.n_jd||0) + '</b><span>JD 原文</span></div>' +
+      '</div>' +
+      '<div class="sub">匹配分拆解 · ' + (det.match==null?'—':det.match) + ' 分 / ' + (det.band||'—') + ' 档 / 全量第 ' + (det.rank||'—') + '</div>' +
+      dims + '</div>' +
+    (gateCats ? '<div class="dsec"><h4>门槛项（只从 JD 原文抽，抽不到留空）</h4>' + gateCats + '</div>' : '') +
+    (tiers ? '<div class="dsec"><h4>能力项（按 JD 提及率分档）</h4>' + tiers + '</div>' : '') +
+    (phrases ? '<div class="dsec"><h4>原文能力表述摘录</h4><div class="chips2">' + phrases + '</div></div>' : '') +
+    (nSkills ? '<div class="dsec"><h4>人工解读 · 能力项对照</h4><table class="mini-tbl"><tbody>' + nSkills + '</tbody></table></div>' : '') +
+    '<div class="dsec"><h4>门槛分布（非实习样本）</h4>' +
+      '<div class="sub">经验</div>' + barsHtml(det.dist && det.dist.exp, k.n_excl_intern) +
+      '<div class="sub">学历</div>' + barsHtml(det.dist && det.dist.edu, k.n_excl_intern) +
+      '<div class="sub">用工形态</div>' + barsHtml(det.dist && det.dist.form, k.n_excl_intern) + '</div>' +
+    '<div class="dsec"><h4>薪资与发展</h4>' +
+      '<div class="txt">' + esc(det.salary_note || '—') + '</div>' +
+      '<div class="sub">发展路径</div><div class="txt">' + esc(det.prospect || '—') + '</div>' +
+      '<div class="sub">天花板</div><div class="txt">' + esc(det.ceiling || '—') + '</div>' +
+      (risk ? '<div class="sub">实测风险</div><ul class="txt">' + risk + '</ul>' : '') + '</div>' +
+    '<div class="dsec"><h4>对你的匹配</h4><div class="txt">' + esc(det.fit_note || '—') + '</div>' +
+      '<div class="sub">建议动作</div><div class="txt">' + esc(det.action || '—') + '</div>' +
+      (det.drama ? '<p class="atlas-tag" style="margin-top:7px">「' + esc(det.drama) + '」</p>' : '') + '</div>' +
+    '<div class="dsec"><h4>JD 原文提取（' + jdN + ' 条实读）</h4>' + lowSample + jd +
+      '<div class="warnline">其余 ' + ((k.n||0) - jdN) + ' 条为平台卡片样本，没有 JD 全文，不做能力项推断。</div></div>';
+}
+
+function rowHtml(f){
+  const m = f.metrics;
+  const band = m ? (m.band||'') : '';
+  const score = m ? ('<span class="score">' + (m.match==null?'—':m.match.toFixed(1)) + '</span>')
+                  : '<span class="score na">无样本</span>';
+  const block = m ? ('<span class="num' + (m.block>3?'':'') + '">' + (m.block||0) + '/' + (m.n||0) + '</span>')
+                  : '<span class="num mut">—</span>';
+  const sal = (m && m.salary_open_median!=null)
+    ? '<span class="num">' + m.salary_open_median + 'K</span>' : '<span class="num mut">—</span>';
+  const open = m ? ('<span class="num">' + (m.open||0) + '</span>') : '<span class="num mut">—</span>';
+  const rv = f.resume_url
+    ? '<a class="lnk" href="' + esc(f.resume_url) + '" target="_blank" rel="noopener" ' +
+      'onclick="event.stopPropagation()">打开</a>'
+    : '<span class="num mut">—</span>';
+  return '<tr data-id="' + esc(f.id) + '">' +
+    '<td class="name">' + esc(f.label) + (f.active?'':'<i>参考</i>') + '</td>' +
+    '<td><span class="band ' + bandCls(band) + '">' + (band || '无') + '</span></td>' +
+    '<td>' + score + '</td>' +
+    '<td>' + dimsHtml(m) + '</td>' +
+    '<td>' + block + '</td>' +
+    '<td>' + sal + '</td>' +
+    '<td>' + open + '</td>' +
+    '<td>' + rv + '</td></tr>';
+}
+
+function renderProfile(){
+  const p = S.profile || {};
+  const id = p.identity || {};
+  const nd = p.needs || {};
+  const cp = p.conditions_profile || {};
+  // 画像不记姓名：判断一个方向要不要投，用的是届别/学历/年限/城市这些属性
+  $('fAge').value = id.age != null ? id.age : '';
+  $('fEdu').value = id.education || cp.education || '';
+  $('fMajor').value = id.major || '';
+  $('fGrad').value = id.graduation || cp.graduation || '';
+  $('fCity').value = id.city || '';
+  $('fYears').value = id.work_years != null ? id.work_years : (cp.exp_years != null ? cp.exp_years : '');
+  $('fSalary').value = nd.salary_expect || id.salary_expect || '';
+  $('fNotes').value = nd.raw || id.notes || '';
+  $('fIntent').value = (p.intent||{}).raw || '';
+  const stack = ((p.conditions_profile||{}).tech_stack) || [];
+  $('fStack').innerHTML = stack.length
+    ? stack.map(t => '<span class="tag">' + esc(t) + '</span>').join('')
+    : '<span class="tag">未填技术栈</span>';
+  const n = stack.length;
+  $('pMeta').textContent = [
+    id.age ? id.age + ' 岁' : '',
+    id.graduation ? id.graduation + ' 届' : '',
+    id.education || '', id.city || '',
+    n ? n + ' 项技术栈' : ''
+  ].filter(Boolean).join(' · ') || '画像未填';
+}
+
+function renderSteps(fams){
+  const p = S.profile || {};
+  const intent = (p.intent||{}).families || [];
+  const src = (fams && fams.source_mtime) ? ('快照 ' + fmtDate(fams.source_mtime)) : '快照时间未知';
+  const items = [
+    ['done', '画像已载入'],
+    ['done', '候选族 ' + intent.length + ' 个（画像设定）'],
+    ['done', '市场数据 · ' + src],
+    ['done', '排名已算 ' + ((fams && fams.totals && fams.totals.with_metrics) || 0) + ' 族']
+  ];
+  $('steps').innerHTML = items.map(([cls, txt]) =>
+    '<span class="stp ' + cls + '"><span class="dot"></span>' + esc(txt) + '</span>').join('');
+}
+
+function renderTable(){
+  const d = S.fams;
+  if(!d || !d.ok){
+    const hint = (d && d.hint) || '读不到 /api/families';
+    $('tb').innerHTML = '<tr><td colspan="8" class="empty">' + esc(hint) + '</td></tr>';
+    return;
+  }
+  const all = d.families || [];
+  const act = all.filter(f => f.active);
+  const hist = all.filter(f => !f.active);
+  $('tb').innerHTML = act.length ? act.map(rowHtml).join('')
+    : '<tr><td colspan="8" class="empty">画像里没有候选族，先在 <code>profile.json</code> 的 intent.families 里选</td></tr>';
+  $('tbHist').innerHTML = hist.length ? hist.map(rowHtml).join('')
+    : '<tr><td colspan="8" class="empty">没有历史族</td></tr>';
+  $('histN').textContent = hist.length;
+  $('famMeta').textContent = '当前口径 ' + act.length + ' 个方向 · 全量 ' + all.length +
+    ' · 有效样本 ' + (d.sample_total || 0) + ' 条 / 在招 ' + (d.sample_open || 0);
+  document.querySelectorAll('#tb tr[data-id],#tbHist tr[data-id]').forEach(tr =>
+    tr.onclick = () => openDrawer(tr.getAttribute('data-id'), 'market'));
+}
+
+function openDrawer(id, from){
+  const f = (S.fams && S.fams.families || []).find(x => x.id === id);
+  if(!f) return;
+  S.cur = id;
+  S.from = from;
+  document.querySelectorAll('#tb tr,#tbHist tr').forEach(tr =>
+    tr.classList.toggle('on', tr.getAttribute('data-id') === id));
+  const m = f.metrics;
+  $('dTitle').textContent = f.label;
+
+  const rows = m ? [
+    ['市场友好度', (m.match==null?'—':m.match.toFixed(1)) + ' 分 · ' + (m.band||'—') + ' 档'],
+    ['该族排名', '全量第 ' + (m.rank||'—') + ' 名'],
+    ['在招 / 样本', (m.open||0) + ' / ' + (m.n||0) + ' 条'],
+    ['在招率', (m.open_rate==null?'—':m.open_rate + '%')],
+    ['门槛超限', (m.block||0) + ' 条'],
+    ['待核实', (m.check||0) + ' 条'],
+    ['疑似挂羊头', (m.suspicious||0) + ' 条'],
+    ['中位薪（在招）', (m.salary_open_median==null?'—':m.salary_open_median + 'K')],
+    ['外包 / 猎头', ((m.form||{})['外包/OD']||0) + ' / ' + ((m.form||{})['猎头']||0) + ' 条']
+  ] : [
+    ['市场数据', '无样本'],
+    ['判断口径', '该方向没有对应的市场采集样本，不补分也不猜']
+  ];
+
+  const dimBars = m ? ['thr','skill','growth','salary'].map((k,i) => {
+    const labels = ['门槛通过率','技能适配','成长空间','薪资水平'];
+    const v = Math.round((m.dims||{})[k] || 0);
+    return '<div class="bar"><span class="bl">' + labels[i] + '</span>' +
+      '<span class="bt"><b style="width:' + Math.max(0,Math.min(100,v)) + '%"></b></span>' +
+      '<span class="bv">' + v + '</span></div>';
+  }).join('') : '';
+
+  const edu = m ? Object.entries(m.edu||{}).sort((a,b)=>b[1]-a[1]).slice(0,4)
+    .map(([k,v]) => esc(k) + ' ' + v).join(' / ') : '';
+
+  $('dBody').innerHTML =
+    '<div class="dsec"><h4>判断</h4><div class="kv">' +
+      rows.map(([k,v]) => '<span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + '</span>').join('') +
+    '</div></div>' +
+    '<div id="dAtlas"><div class="dsec"><h4>能力全景</h4><div class="txt" style="color:var(--dim)">读取图谱内容…</div></div></div>' +
+    (f.note ? '<div class="dsec"><h4>说明</h4><div class="txt">' + esc(f.note) + '</div></div>' : '') +
+    '<div class="dsec"><h4>下一步</h4><div class="dact">' +
+      (f.resume_url ? '<a class="btn" href="' + esc(f.resume_url) + '" target="_blank" rel="noopener">打开该族简历</a>' : '') +
+      '<button class="btn" id="dGoDeliver">去投递条件</button>' +
+    '</div></div>';
+
+  $('dFoot').textContent = '口径：市场友好度 = 门槛通过率 35% + 技能适配 30% + 成长空间 20% + 薪资水平 15%，' +
+    '由 ' + ((S.fams && S.fams.sample_total) || 0) + ' 条去重样本聚合。单条岗位的判定看投递段 dry-run，两者不同量纲。';
+
+  // 图谱内容就地展开：不再跳到 atlas.html；详情页点开哪族就读哪族的索引
+  const seq = ++S.atlasSeq;
+  (async () => {
+    const d = await API('/api/atlas?family=' + encodeURIComponent(id));
+    if(seq !== S.atlasSeq || !$('dAtlas')) return;
+    if(d && d.ok && d.family){
+      $('dAtlas').innerHTML = atlasHtml(d.family, d.mine_skills || []);
+    } else {
+      $('dAtlas').innerHTML = '<div class="dsec"><h4>能力全景</h4><div class="warnline">' +
+        esc((d && (d.hint || d.code)) || '图谱索引不可用') + '</div>' +
+        (dimBars ? '<div class="dsec"><h4>四维拆解</h4>' + dimBars + '</div>' : '') +
+        (edu ? '<div class="dsec"><h4>学历分布</h4><div class="txt">' + edu + '</div></div>' : '') + '</div>';
+    }
+  })();
+
+  const go = $('dGoDeliver');
+  if(go) go.onclick = () => {
+    // 把选中族带过去：壳层打开的是固定 url，方向只能靠 localStorage 传递
+    try { localStorage.setItem('wb.cond.slug', S.cur || id); } catch(e){}
+    const p = window.parent;
+    if(p && p !== window && typeof p.wbOpen === 'function'){ p.wbOpen('condition_card'); closeDrawer(); }
+    else { location.href = '工作台-投递条件.html?d=' + encodeURIComponent(S.cur || id); }
+  };
+
+  $('dCrumb').textContent = '岗位判断与分析 / ' + (S.from === 'market' ? '市场全景' : '分析结果') + ' / ' + f.label;
+  document.body.classList.add('detail-mode');
+  $('detailView').setAttribute('aria-hidden','false');
+  window.scrollTo(0, 0);
+}
+function closeDrawer(){
+  document.body.classList.remove('detail-mode');
+  $('detailView').setAttribute('aria-hidden','true');
+  document.querySelectorAll('#tb tr.on,#tbHist tr.on').forEach(tr => tr.classList.remove('on'));
+}
+$('dClose').onclick = closeDrawer;
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && document.body.classList.contains('detail-mode')) closeDrawer();
+});
+
+/* 保存画像 */
+$('btnSave').onclick = async () => {
+  const btn = $('btnSave');
+  const age = $('fAge').value.trim(), years = $('fYears').value.trim();
+  const edu = $('fEdu').value.trim();
+  const patch = {
+    identity: {
+      age: age === '' ? null : Number(age),
+      education: edu,
+      major: $('fMajor').value.trim(),
+      graduation: $('fGrad').value.trim(),
+      city: $('fCity').value.trim(),
+      work_years: years === '' ? null : Number(years)
+    },
+    // 筛选口径读的是 conditions_profile，和 conditions/*.json 的 profile_ref 对齐
+    conditions_profile: {
+      education: edu,
+      graduation: $('fGrad').value.trim(),
+      exp_years: years === '' ? null : Number(years)
+    },
+    needs: {
+      salary_expect: $('fSalary').value.trim(),
+      raw: $('fNotes').value.trim()
+    },
+    intent: { raw: $('fIntent').value.trim() }
+  };
+  btn.disabled = true;
+  const j = await API('/api/profile', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(patch)
+  });
+  btn.disabled = false;
+  const msg = $('saveMsg');
+  msg.hidden = false;
+  if(j && j.ok){
+    S.profile = j.profile;
+    renderProfile();
+    msg.textContent = (j.created ? '已建档' : '已保存')
+      + (j.backup ? ' · 备份 ' + j.backup.split('/').pop() : '')
+      + ' · 下次开跑时全部方向生效';
+  } else {
+    msg.textContent = '保存失败：' + ((j && (j.hint || j.err)) || '接口不可用');
+    msg.style.color = 'var(--bad)';
+  }
+  setTimeout(() => { msg.hidden = true; msg.style.color = ''; }, 6000);
+};
+
+/* 折叠画像卡：填过一次就可以收起，把注意力留给方向判断 */
+$('btnFold').onclick = () => {
+  const b = $('pBody');
+  const hide = b.style.display !== 'none';
+  b.style.display = hide ? 'none' : '';
+  $('btnFold').textContent = hide ? '展开' : '收起';
+};
+
+/* ---------------- 分析：点一次，跑一遍，出推荐 ---------------- */
+const VERDICT_CLS = {'现在就能投':'A', '补一下再投':'B', '先不投':'C'};
+
+function renderAnalysis(d, when){
+  S.analysis = d;
+  $('anaEmpty').hidden = true;
+  $('anaWrap').hidden = false;
+  $('anaFoot').hidden = false;
+  $('anaMeta').textContent = '分析于 ' + (when || '') + ' · '
+    + d.stats.families + '/' + d.stats.all_families + ' 个方向 · 推荐 ' + (d.recommended || []).length;
+
+  $('anaRows').innerHTML = (d.families || []).map(r => {
+    const cls = VERDICT_CLS[r.verdict] || 'C';
+    const gaps = (r.gaps || []).length
+      ? '<div class="whyline">缺 ' + esc(r.gaps.join('、')) + '</div>' : '';
+    return '<tr data-id="' + esc(r.id || '') + '">'
+      + '<td class="na-rank">' + r.rank + '</td>'
+      + '<td class="name">' + esc(r.label) + (r.intent_hit ? '<i>你想投</i>' : '')
+        + (r.active ? '' : '<i>非在投</i>') + gaps + '</td>'
+      + '<td><span class="score">' + r.score + '</span></td>'
+      + '<td>' + (r.market_match != null ? r.market_match : '—') + '</td>'
+      + '<td>' + (r.skill_fit != null ? (r.skill_fit + '%') : '—') + '</td>'
+      + '<td>' + (r.median_pay_wan != null ? (r.median_pay_wan + 'K') : '—') + '</td>'
+      + '<td>' + (r.growth != null ? r.growth : '—') + '</td>'
+      + '<td><span class="band ' + cls + '">' + esc(r.verdict) + '</span></td>'
+      + '</tr>';
+  }).join('');
+
+  $('anaRows').querySelectorAll('tr').forEach(tr => tr.onclick = () => {
+    const id = tr.getAttribute('data-id');
+    if(id) openDrawer(id);
+  });
+  $('anaAtlasHint').hidden = false;
+
+  const w = d.weights || {};
+  $('anaFoot').innerHTML = '综合分 = 市场 ' + Math.round((w.market||0)*100) + '% + 技能 '
+    + Math.round((w.skill||0)*100) + '% + 薪资 ' + Math.round((w.pay||0)*100) + '% + 想法 '
+    + Math.round((w.intent||0)*100) + '%｜' + esc(d.inputs && d.inputs.city ? d.inputs.city + ' · ' : '')
+    + '薪资下限 ' + (d.inputs && d.inputs.salary_floor ? d.inputs.salary_floor : '未设')
+    + '｜只用于排序，不是录用概率。市场分仍是族级快照，单条岗位看投递段试跑。';
+}
+
+function anaPoll(id){
+  clearInterval(S.anaTimer);
+  const tick = async () => {
+    const d = await API('/api/job/' + encodeURIComponent(id) + '?t=' + Date.now());
+    if(!d.ok) return;
+    const j = d.job;
+    if(j.status === 'running' || j.status === 'pending'){
+      $('anaMsg').className = 'hint';
+      $('anaMsg').textContent = j.status === 'pending'
+        ? '排队中…' : '分析中…（读市场数据 + 算命中率）';
+      return;
+    }
+    clearInterval(S.anaTimer);
+    if(j.status === 'done' && j.result && j.result.data){
+      renderAnalysis(j.result.data, (j.ended_at || '').slice(5, 16).replace('T', ' '));
+      $('anaMsg').className = 'okmsg';
+      $('anaMsg').textContent = j.result.summary || '分析完成';
+    } else {
+      $('anaMsg').className = 'badmsg';
+      $('anaMsg').textContent = '分析失败：' + (j.error || '未知原因');
+    }
+  };
+  tick();
+  S.anaTimer = setInterval(tick, 1200);
+}
+
+async function loadAnalysis(){
+  const d = await API('/api/jobs?kind=position-analysis&limit=10');
+  const js = ((d && d.jobs) || []).filter(j => j.status === 'done'
+    && j.result && j.result.data && j.result.data.schema === 'analyze/v1');
+  if(!js.length){
+    $('anaMeta').textContent = '还没分析过';
+    return;
+  }
+  const j = js[0];
+  renderAnalysis(j.result.data, (j.ended_at || '').slice(5, 16).replace('T', ' '));
+}
+
+async function loadEngineState(){
+  // 分析依赖投递引擎（jkit）。模板轨没有 jkit 时按钮不能点死，要明确说为什么。
+  const d = await API('/api/jobs?limit=1');
+  const k = ((d && d.kinds) || []).find(x => x.kind === 'position-analysis');
+  if(k && k.available === false){
+    const b = $('btnAnalyze');
+    b.disabled = true;
+    b.textContent = '分析（未接入引擎）';
+    $('anaMsg').className = 'hint';
+    $('anaMsg').textContent = '当前工作区没有 jkit/ 目录，分析任务跑不了。接入投递引擎后这里会自动可用。';
+  }
+}
+
+async function runAnalyze(){
+  const btn = $('btnAnalyze');
+  btn.disabled = true;
+  const scope = $('anaScope').value;
+  const d = await API('/api/job', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({kind:'position-analysis', params:{scope}})
+  });
+  btn.disabled = false;
+  if(!d.ok){
+    $('anaMsg').className = 'badmsg';
+    $('anaMsg').textContent = '没跑起来：' + (d.err || d.code);
+    return;
+  }
+  // 建完立刻显示结果（分析是秒级脚本），同时轮询兜底
+  if(d.job && d.job.status === 'done' && d.job.result && d.job.result.data){
+    renderAnalysis(d.job.result.data, (d.job.ended_at || '').slice(5, 16).replace('T', ' '));
+    $('anaMsg').className = 'okmsg';
+    $('anaMsg').textContent = d.job.result.summary || '分析完成';
+    return;
+  }
+  anaPoll(d.job.id);
+}
+
+$('btnAnalyze').onclick = runAnalyze;
+$('anaScope').onchange = runAnalyze;
+
+/* ---------------- WorkBuddy 深度分析：复用 agent 任务流程 ---------------- */
+// 沿用其他节点同一条链路：建 agent 任务(pending) → 在 WorkBuddy 会话按 SOP 执行
+// → POST /api/job/:id/result 回写 → 这里轮询并把结果补回本页。
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+  const ta = document.createElement('textarea');
+  ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+function deepInstruction(job){
+  const scope = (job.params||{}).scope === 'all' ? '全部岗位族' : '只看在投方向';
+  return [
+    '请在 WorkBuddy 会话中执行「方向深度分析」任务（job ' + job.id + '）。',
+    '任务模板：templates/workbuddy/tasks/position_deep_analysis.example.md',
+    'SOP：docs/岗位调研SOP.md（口径先行 / 证据闭环 / 只读旁路）',
+    '分析范围：' + scope,
+    (job.params||{}).note ? '补充想法：' + job.params.note : '',
+    '',
+    '取数（只读）：/api/profile、/api/families、/api/atlas?family=<id>、最近一次 position-analysis 的结果。',
+    '你的价值是解读与判断，不是重算分数：基线分照抄并注明来源，重点讲清为什么、想法的真实诉求、数据支撑不住的地方。',
+    '完成后把结构化摘要回写：POST /api/job/' + job.id + '/result',
+    'body: {"ok":true,"summary":"一句话结论","artifacts":[],"data":{"schema":"analyze-deep/v1","note_read":"对岗位想法的解读","families":[]}}',
+    '硬约束：只读、不投递、不沟通、不编造；JD≤1 条声明参考度低；仅本人私下使用。'
+  ].filter(x => x !== '').join('\n');
+}
+function renderDeepJob(j){
+  $('deepBox').hidden = false;
+  const st = $('deepState');
+  st.className = '';
+  if(j.status === 'done'){
+    st.textContent = '已完成 · ' + ((j.ended_at||'').slice(5,16).replace('T',' '));
+    st.className = 'done';
+  } else if(j.status === 'failed' || j.status === 'cancelled'){
+    st.textContent = j.status === 'failed' ? '执行失败' : '已取消';
+    st.className = 'fail';
+  } else {
+    st.textContent = j.status === 'pending' ? '排队中 · 等 WorkBuddy 取件' : '执行中';
+  }
+  const r = j.result || {};
+  const note = (r.data && r.data.note_read) ? r.data.note_read : '';
+  $('deepBody').innerHTML =
+    (r.summary ? '<div>' + esc(r.summary) + '</div>' : '') +
+    (note ? '<div style="margin-top:5px;color:#8fb3e8">想法解读：' + esc(note) + '</div>' : '') +
+    (j.error ? '<div style="color:var(--bad)">' + esc(j.error) + '</div>' : '') +
+    ((j.status === 'pending')
+      ? '<div style="color:var(--dim);margin-top:5px">任务已排队。到 WorkBuddy 会话取件执行并回写结果，本页会自动更新。</div>' : '');
+  const acts = [];
+  if(j.status === 'pending'){
+    acts.push('<button class="btn" id="deepCopy">复制取件指令</button>');
+    acts.push('<span class="hint">job ' + esc(j.id) + '</span>');
+  }
+  if(Array.isArray(r.artifacts) && r.artifacts.length){
+    acts.push('<span class="hint">产物：' + r.artifacts.map(esc).join('、') + '</span>');
+  }
+  $('deepAct').innerHTML = acts.join('');
+  const cp = $('deepCopy');
+  if(cp) cp.onclick = () => { copyText(deepInstruction(j)); cp.textContent = '已复制 ✓'; };
+}
+function pollDeep(id){
+  clearInterval(S.deepTimer);
+  const tick = async () => {
+    const d = await API('/api/job/' + encodeURIComponent(id));
+    if(!d.ok) return;
+    renderDeepJob(d.job);
+    if(d.job.status === 'done' || d.job.status === 'failed' || d.job.status === 'cancelled'){
+      clearInterval(S.deepTimer);
+    }
+  };
+  tick();
+  S.deepTimer = setInterval(tick, 1800);
+}
+async function startDeep(){
+  const btn = $('btnDeep');
+  btn.disabled = true;
+  const d = await API('/api/job', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      kind:'position-deep-analysis',
+      params:{scope:$('anaScope').value, note:$('fIntent').value.trim()}
+    })
+  });
+  btn.disabled = false;
+  if(!d.ok || !d.job){
+    $('deepBox').hidden = false;
+    $('deepState').textContent = '提交失败';
+    $('deepState').className = 'fail';
+    $('deepBody').textContent = (d && (d.err || d.code)) || '接口不可用';
+    return;
+  }
+  S.deepJobId = d.job.id;
+  renderDeepJob(d.job);
+  pollDeep(d.job.id);
+}
+$('btnDeep').onclick = startDeep;
+async function loadDeep(){
+  const d = await API('/api/jobs?kind=position-deep-analysis&limit=1');
+  const j = ((d && d.jobs) || [])[0];
+  if(j && j.status !== 'cancelled'){
+    S.deepJobId = j.id;
+    renderDeepJob(j);
+    if(j.status === 'pending' || j.status === 'running') pollDeep(j.id);
+  }
+}
+
+/* 市场全景折叠 */
+$('btnFam').onclick = () => {
+  const b = $('famBody');
+  b.classList.toggle('hidden');
+  $('btnFam').textContent = b.classList.contains('hidden') ? '展开' : '收起';
+};
+
+(async () => {
+  const [pf, fams] = await Promise.all([API('/api/profile'), API('/api/families')]);
+  S.profile = (pf && pf.ok) ? pf.profile : null;
+  S.fams = fams;
+  if(!S.profile){
+    $('pMeta').textContent = (pf && pf.hint) || '画像不可用';
+  } else {
+    renderProfile();
+  }
+  renderSteps(S.fams);
+  renderTable();
+  loadAnalysis();
+  loadEngineState();
+  loadDeep();
+  $('stamp').textContent = (S.fams && S.fams.source_mtime)
+    ? '数据快照 ' + fmtDate(S.fams.source_mtime) : '只读聚合';
+  // 深链：?f=<family-id> 直接切到该族详情页，可做书签 / 从别处跳进来
+  const wantF = new URLSearchParams(location.search).get('f');
+  if(wantF) openDrawer(wantF);
+})();
+</script>
+</body></html>

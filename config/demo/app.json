@@ -9,17 +9,23 @@
     "headers": "Content-Type"
   },
   "files": {
-    "data": "unified_data.json",
-    "backup": "unified_data.backup.json",
-    "csv_main": "台账.csv",
-    "csv_campus": "校招台账.csv",
-    "app_html": "求职台账.html",
+    "data": "data/ledger.json",
+    "backup": "data/ledger.backup.json",
+    "csv_main": "data/ledger.csv",
+    "csv_campus": "data/campus.csv",
+    "app_html": "app.html",
     "rules_fallback": "rules/local/job_family.json"
   },
   "pages": {
     "workbench": "工作台.html",
-    "workbench_paths": ["/workbench"],
-    "home_paths": ["/", "/app", "/index.html"]
+    "workbench_paths": [
+      "/workbench"
+    ],
+    "home_paths": [
+      "/",
+      "/app",
+      "/index.html"
+    ]
   },
   "build": {
     "template_dir": "app",
@@ -33,13 +39,19 @@
   },
   "storage_namespace": "wb",
   "api_base": "",
-  "static": { "cache_control": "no-store" },
+  "static": {
+    "cache_control": "no-store"
+  },
   "sources": {
     "job_families": "demo_data/metrics.example.json",
     "resume_versions": "demo_data/resume_versions.example.json",
     "atlas_deep_link": "",
-    "doc_roots": ["docs"],
-    "doc_allow": ["工作台设计.md"]
+    "doc_roots": [
+      "docs"
+    ],
+    "doc_allow": [
+      "工作台设计.md"
+    ]
   },
   "artifact_scans": [
     {
@@ -50,5 +62,8 @@
       "sort": "name",
       "note": "示例：丢一个 简历_<岗位>.html 进来就会出现在视图条"
     }
-  ]
+  ],
+  "ledger": {
+    "runs_dir": "runs"
+  }
 }

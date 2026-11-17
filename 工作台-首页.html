@@ -36,9 +36,9 @@ h1{margin:0;font-size:18px;letter-spacing:.2px;line-height:1.4}
 .kpi .l{font-size:11px;color:#9aa3b3;margin-top:2px}
 .kpi .h{font-size:10px;color:var(--dim);margin-top:0;line-height:1.5}
 
-/* 五段：flex 换行，第一行 3 张、第二行 2 张自动撑满，不留空洞 */
-.flow{display:flex;flex-wrap:wrap;gap:10px}
-.stage{flex:1 1 calc(33.333% - 7px);min-width:0;background:var(--panel);border:1px solid var(--line);
+/* 流程卡片：flex 换行，第一行整行铺满，不留空洞（段数由 routes.json 决定） */
+.flow{display:flex;flex-wrap:wrap;gap:11px}
+.stage{flex:1 1 268px;min-width:0;max-width:100%;background:var(--panel);border:1px solid var(--line);
   border-radius:11px;padding:12px 13px;display:flex;flex-direction:column;gap:9px;
   transition:border-color .14s,background .14s}
 .stage:hover{border-color:var(--line2);background:#1e222a}
@@ -88,13 +88,15 @@ h1{margin:0;font-size:18px;letter-spacing:.2px;line-height:1.4}
 .meta .mb{margin-top:6px}
 .meta code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;
   padding:0 4px;font-size:10px;color:#a8b2c2}
-</style></head>
+</style>
+<link rel="stylesheet" href="/assets/ui.css"></head>
 <body>
 <div class="wrap">
   <header>
     <div class="hl">
       <h1>总览</h1>
-      <p class="sub">一条链路：判断方向 → 调研市场 → 定制简历 → 投递 → 跟踪回复。
+      <p class="sub">一条链路：我的档案 → 岗位判断与分析 → 投递 → 跟踪回复。
+        档案里放简历与个人情况（只关系到判断的属性，不记姓名），后面每段都引用它；
         每段的报告、版本、快照都在段内切换，本页只汇总状态。</p>
     </div>
     <div class="hr">
@@ -106,7 +108,7 @@ h1{margin:0;font-size:18px;letter-spacing:.2px;line-height:1.4}
   <div class="sec-h"><h2>当前数据</h2><span id="kpiHint">读取中…</span></div>
   <section class="kpis" id="kpis"></section>
 
-  <div class="sec-h"><h2>五段流程</h2><span>点按钮直接进入对应页面</span></div>
+  <div class="sec-h"><h2>流程</h2><span>点按钮直接进入对应页面</span></div>
   <section class="flow" id="flow"></section>
 
   <details class="meta">
@@ -158,8 +160,9 @@ function parseFlow(flow){
 }
 
 (async () => {
-  const [routes, jf, ledger] = await Promise.all([
-    API('/api/routes'), API('/api/job-families'), API('/api/ledger-index?limit=1')
+  const [routes, jf, ledger, fams] = await Promise.all([
+    API('/api/routes'), API('/api/job-families'), API('/api/ledger-index?limit=1'),
+    API('/api/families')
   ]);
 
   const R = (routes && routes.routes) || {groups:[], items:[]};
@@ -169,20 +172,29 @@ function parseFlow(flow){
 
   // ---- 关键数据：全部来自只读接口，取不到就是「—」，不猜
   const jfOk  = jf && jf.ok;
+  const drOk  = jfOk && jf.directions && jf.directions.ok && jf.directions.totals
+    && jf.directions.totals.jobs > 0;
+  const dr    = drOk ? jf.directions : null;
   const ledOk = ledger && ledger.ok;
   const nViews = items.reduce((n, i) => n + viewsOf(i).length, 0);
+  const famsOk = fams && fams.ok;
+  const nActive = famsOk ? ((fams.totals || {}).active || 0) : null;
+  const nAll = famsOk ? ((fams.totals || {}).all || 0) : null;
 
   $('kpis').innerHTML = [
-    kpi(jfOk ? jf.totals.families : null, '岗位族', '已跑通匹配'),
+    kpi(nActive, '在投方向', nAll ? ('全量 ' + nAll + ' 族已跑通匹配') : '未接入契约'),
+    kpi(drOk ? (dr.totals.roles || dr.totals.jobs) : null, '扩展方向',
+        drOk ? ((dr.totals.jobs || 0) + ' 个在招岗位 · 网络调研') : '未接入'),
     kpi(jfOk ? jf.total : null, '有效样本',
         jfOk && jf.total_open != null ? ('在招 ' + jf.total_open) : '采集去重后'),
     kpi(ledOk ? ledger.totals.lines : null, '台账事件', 'append-only'),
     kpi(ledOk ? ledger.totals.delivered : null, '已投递', '有 delivery 记录'),
     kpi(nViews || null, '可打开视图', items.length + ' 个入口')
   ].join('');
-  $('kpiHint').textContent = jfOk ? ('数据源 ' + (jf.source || '—')) : '部分数据源未接入';
+  $('kpiHint').textContent = jfOk ? ('数据源 ' + (jf.source || '—') +
+    (drOk ? ' ＋ ' + dr.source : '')) : '部分数据源未接入';
 
-  // ---- 五段流程卡片：第一行 3 张、其余自动撑满整行
+  // ---- 流程卡片：段数来自 routes.json，第一行铺满、其余自动撑满整行
   $('flow').innerHTML = flows.map(it => {
     const g = groups.find(x => x.id === it.group) || {};
     const vs = viewsOf(it);

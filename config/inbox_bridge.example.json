@@ -1,0 +1,13 @@
+{
+  "schema": "inbox_bridge/v1",
+  "_note": "远程指令通道模板。真实实例值放 config/local/inbox_bridge.json（gitignored）。token 必须由使用者自行生成，不得写入公开仓库。",
+  "enabled": true,
+  "token": "<REPLACE_WITH_RANDOM_TOKEN>",
+  "allowed_senders": ["<YOUR_EMAIL>"],
+  "api_base": "http://127.0.0.1:<PORT>",
+  "state_file": "jobs/inbox_bridge_state.json",
+  "confirm_ttl_minutes": 30,
+  "max_actions_per_run": 5,
+  "reply_prefix": "[工作台]",
+  "allow_delivery": false
+}

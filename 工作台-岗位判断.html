@@ -103,12 +103,103 @@ tr.det>td{background:#171b21;padding:0}
 .err b{color:#f4a3a3}
 .foot{margin:14px 0 0;font-size:11px;color:var(--mut);line-height:1.9}
 .foot code{background:var(--panel2);border-radius:4px;padding:1px 5px;font-size:10.5px}
+/* ---- 扩展方向（机器人 / 芯片）：与主表同视觉语言，但独立分区 ---- */
+.dirs{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+.dx-h{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.dx-h h2{margin:0;font-size:13.5px;font-weight:600;letter-spacing:.2px}
+.dx-tag{font-size:10.5px;border:1px solid var(--line);border-radius:20px;padding:1px 8px;color:var(--mut)}
+.dx-tag.warn{border-color:rgba(240,190,95,.4);color:#e8c67e;background:rgba(240,190,95,.08)}
+.dx-link{margin-left:auto;font-size:11.5px;color:var(--accent);text-decoration:none;white-space:nowrap}
+.dx-link:hover{text-decoration:underline}
+.dx-note{margin:7px 0 12px;font-size:11px;color:var(--mut);line-height:1.8;max-width:980px}
+.dx-note b{color:#c7cfdc;font-weight:600}
+.dx-kpi{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.dx-kpi i{font-style:normal;font-size:11px;color:var(--mut);background:var(--panel);
+  border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-variant-numeric:tabular-nums}
+.dx-kpi i b{color:var(--ink);font-weight:600;margin-left:4px}
+.dx-paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px;margin-bottom:14px}
+.dx-path{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.dx-path.go{border-color:rgba(95,211,154,.35)}
+.dx-path.cond{border-color:rgba(240,190,95,.3)}
+.dx-path.no{border-color:rgba(240,122,122,.28)}
+.dx-path .pt{font-size:12px;font-weight:600;line-height:1.5;margin:4px 0 5px}
+.dx-path .pw{font-size:11px;color:var(--mut);line-height:1.75}
+.dx-path .pc{font-size:10.5px;color:var(--dim);margin-top:5px}
+.dx-lv{font-size:10px;border-radius:4px;padding:1px 6px;font-weight:600}
+.dx-lv.go{background:rgba(95,211,154,.15);color:var(--a)}
+.dx-lv.cond{background:rgba(240,190,95,.15);color:var(--s)}
+.dx-lv.no{background:rgba(240,122,122,.14);color:var(--d)}
+.dx-dir{margin-bottom:16px}
+.dx-dh{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;margin:0 0 7px}
+.dx-dh b{font-size:12.5px}
+.dx-dh span{font-size:11px;color:var(--mut)}
+.dx-cnt{font-size:10.5px;color:var(--mut);font-variant-numeric:tabular-nums;margin-left:auto}
+.dx-sub{margin:2px 0 8px;font-size:11px;color:var(--dim);line-height:1.7}
+.dx-sub b{color:#c7cfdc;font-weight:600}
+.dx-grp{font-size:11px;color:#8fb3e8;font-weight:600;margin:12px 0 5px;letter-spacing:.2px}
+.dx-grp:first-child{margin-top:2px}
+table.dxr{width:100%;border-collapse:collapse;table-layout:fixed;min-width:820px}
+table.dxr th{font-size:10.5px;color:var(--mut);font-weight:500;text-align:left;padding:7px 9px;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+table.dxr td{padding:7px 9px;border-bottom:1px solid var(--line);font-size:11.5px;
+  vertical-align:top;line-height:1.7}
+table.dxr tr:last-child td{border-bottom:0}
+table.dxr th:nth-child(1){width:232px}
+table.dxr th:nth-child(2){width:92px}
+table.dxr th:nth-child(3){width:290px}
+.dxr .rn{font-weight:600;line-height:1.5}
+.dxr .rn em{font-style:normal;color:var(--s);margin-right:3px}
+.dxr .rm{display:block;font-size:10px;color:var(--dim);font-weight:400;margin-top:2px;line-height:1.5}
+.dxr .rt{font-size:10.5px;border-radius:5px;padding:1px 7px;white-space:nowrap;font-weight:600;display:inline-block}
+.dxr .rt.g{background:rgba(95,211,154,.15);color:var(--a)}
+.dxr .rt.b{background:rgba(122,168,255,.15);color:var(--b)}
+.dxr .rt.r{background:rgba(240,122,122,.13);color:#e88f8f}
+.dxr .rt.m{background:rgba(154,164,181,.14);color:#98a2b3}
+.dxr .rv{font-weight:600;color:#e2e7ef}
+.dxr .rd{color:var(--mut);font-size:11px}
+.dx-tbl{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table.dxt{width:100%;border-collapse:collapse;table-layout:fixed;min-width:790px}
+table.dxt th{font-size:10.5px;color:var(--mut);font-weight:500;text-align:left;padding:7px 9px;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+table.dxt td{padding:8px 9px;border-bottom:1px solid var(--line);font-size:11.5px;
+  vertical-align:top;line-height:1.65}
+table.dxt tr:last-child td{border-bottom:0}
+table.dxt th:nth-child(1){width:200px}
+table.dxt th:nth-child(2){width:150px}
+table.dxt th:nth-child(3){width:100px}
+table.dxt th:nth-child(5){width:108px}
+.dx-job{font-weight:600;line-height:1.45}
+.dx-co{display:block;font-size:10.5px;color:var(--dim);font-weight:400;margin-top:2px}
+.dx-sal{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.dx-sal small{display:block;font-weight:400;color:var(--dim);font-size:10px}
+.dx-must{color:#b9c2d1}
+.dx-must em{font-style:normal;color:var(--dim)}
+.dx-st{display:inline-block;font-size:10.5px;border-radius:5px;padding:1px 7px;white-space:nowrap;font-weight:600}
+.dx-st.fit{background:rgba(95,211,154,.16);color:var(--a)}
+.dx-st.patch{background:rgba(240,190,95,.16);color:var(--s)}
+.dx-st.try{background:rgba(122,168,255,.16);color:var(--b)}
+.dx-st.no{background:rgba(154,164,181,.14);color:#98a2b3}
+.dx-blk{display:block;font-size:10px;color:#d99a9a;margin-top:3px}
+.dx-more{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:0 12px}
+.dx-more summary{cursor:pointer;font-size:11.5px;color:var(--mut);padding:9px 0;list-style:none}
+.dx-more summary::-webkit-details-marker{display:none}
+.dx-more summary:before{content:"▸ ";color:var(--dim)}
+.dx-more[open] summary:before{content:"▾ "}
+.dx-body{padding:0 0 12px;font-size:11.5px;line-height:1.85;color:#b9c2d1}
+.dx-body h4{margin:10px 0 4px;font-size:11.5px;color:#c7cfdc;font-weight:600}
+.dx-body ol,.dx-body ul{margin:4px 0 0;padding-left:18px}
+.dx-body li{margin:3px 0}
+.dx-body .k{color:#8fb3e8;font-weight:600}
+.dx-body .warnline{color:#e8c67e}
 /* 更窄的容器（分栏/窄窗口）下先隐藏四维与薪资，精确值在展开行里仍可看 */
 @media(max-width:940px){
   .wrap{padding:16px 12px 50px}
   .col-d4,.col-sal{display:none}
+  .dx-cnt{margin-left:0;width:100%}
 }
-</style></head>
+</style>
+<link rel="stylesheet" href="/assets/ui.css"></head>
 <body>
 <div class="wrap">
   <header>
@@ -145,6 +236,26 @@ tr.det>td{background:#171b21;padding:0}
     </table>
     <div class="empty" id="empty" hidden>没有符合筛选条件的岗位族。</div>
   </div>
+
+  <section class="dirs" id="dirs" hidden>
+    <div class="dx-h">
+      <h2>扩展方向 · 机器人 / 芯片 / 现场交付</h2>
+      <span class="dx-tag">不在原 22 族内</span>
+      <span class="dx-tag warn">网络调研 · 非平台实测</span>
+      <a class="dx-link" id="dxReport" target="_blank" rel="noopener">19 个方向 · 完整报告 →</a>
+      <a class="dx-link" id="dxReportJd" target="_blank" rel="noopener" style="margin-left:10px">岗位 JD 原文 →</a>
+    </div>
+    <p class="dx-note" id="dxNote"></p>
+    <div class="dx-kpi" id="dxKpi"></div>
+    <div class="dx-paths" id="dxPaths"></div>
+    <div id="dxRoles"></div>
+    <div class="dx-sub" id="dxSub"></div>
+    <div id="dxTables"></div>
+    <details class="dx-more" id="dxMore" hidden>
+      <summary>能力缺口、行动步骤与三个坑（点开看）</summary>
+      <div class="dx-body" id="dxBody"></div>
+    </details>
+  </section>
 
   <p class="foot">
     四维（门槛/技能/成长/薪资）依次为表中的四列信号条：绿≥75、黄≥50、红&lt;50，悬停可看精确分值。
@@ -313,10 +424,112 @@ function renderTable(){
   // 行展开由 wbToggle 内联绑定，这里只保留视觉状态同步
 }
 
+// ---- 扩展方向：机器人 / 芯片（数据源 directions.json，与 22 族分开） ----
+const DX_STATUS = {fit:'能投', patch:'补一点', try:'可试', no:'够不着'};
+const DX_VERDICT = {go:'go', conditional:'cond', no:'no'};
+
+function renderDirections(dr){
+  const box = $('dirs');
+  if(!dr || !dr.ok || !Array.isArray(dr.list) || !dr.list.length){ box.hidden = true; return; }
+  box.hidden = false;
+
+  if(dr.roles_report_url){ $('dxReport').href = dr.roles_report_url; } else { $('dxReport').style.display = 'none'; }
+  if(dr.report_url){ $('dxReportJd').href = dr.report_url; } else { $('dxReportJd').style.display = 'none'; }
+
+  const t = dr.totals || {};
+
+  // 口径必须写在最显眼处：这批数据不是平台实测，不能和上面的匹配分横比
+  $('dxNote').innerHTML = '这 ' + num(t.jobs, '') + ' 条岗位来自 <b>' + esc(dr.source_label || '网络公开 JD') + '</b>（as of ' +
+    esc(dr.as_of || '—') + '），是<b>抽样调研</b>不是平台批量实测——所以单独成区，' +
+    '<b>不进上面的匹配分排序</b>，也不改 <code style="background:#232731;border-radius:4px;padding:1px 5px">metrics2.json</code> 的口径。' +
+    '「能投 / 补一点 / 可试 / 够不着」是按你现在的技术栈判定，不是 JD 原文措辞。';
+
+  $('dxSub').innerHTML = '下面 ' + num(t.jobs, '') + ' 条是<b>现在真在招</b>的具体岗位（有薪资、有门槛、有状态判定），用来验证上面的判断。';
+
+  $('dxKpi').innerHTML = [
+    ['方向', t.directions], ['岗位', t.jobs], ['能投', t.fit],
+    ['补 1-3 月', t.patch], ['可试', t.try], ['够不着', t.no]
+  ].map(([k,v]) => '<i>' + k + '<b>' + num(v, '—') + '</b></i>').join('');
+
+  $('dxPaths').innerHTML = (dr.paths || []).map(p => {
+    const cls = DX_VERDICT[p.verdict] || 'cond';
+    return '<div class="dx-path ' + cls + '">' +
+      '<span class="dx-lv ' + cls + '">路径 ' + esc(p.id) + ' · ' + esc(p.level) + '</span>' +
+      '<div class="pt">' + esc(p.title) + '</div>' +
+      '<div class="pw">' + esc(p.why) + '</div>' +
+      '<div class="pc">代价：' + esc(p.cost) + '</div></div>';
+  }).join('');
+
+  // ---- 19 个方向全景（结论层）：先回答「有哪些路」，再用下面的 15 条明细验证 ----
+  const roles = Array.isArray(dr.roles) ? dr.roles : [];
+  if(roles.length){
+    const typeCls = t => /高门槛|关门|别碰/.test(t) ? 'r' : /收窄/.test(t) ? 'm' : /平稳/.test(t) ? 'b' : 'g';
+    const groups = [];
+    roles.forEach(r => {
+      let g = groups.find(x => x.name === r.group);
+      if(!g){ g = {name:r.group, items:[]}; groups.push(g); }
+      g.items.push(r);
+    });
+    $('dxRoles').innerHTML =
+      '<div class="dx-dh" style="margin-top:16px"><b>19 个可转方向 · 先说结论</b>' +
+      '<span class="dx-cnt">★ ' + num(dr.totals && dr.totals.starred, 0) + ' 条最贴</span></div>' +
+      (dr.roles_note ? '<p class="dx-sub" style="margin:0 0 10px">' + esc(dr.roles_note) + '</p>' : '') +
+      groups.map(g => '<div class="dx-grp">' + esc(g.name) + '</div>' +
+        '<div class="dx-tbl"><table class="dxr"><thead><tr>' +
+        '<th>方向</th><th>趋势</th><th>对你的判断</th><th>说明</th>' +
+        '</tr></thead><tbody>' +
+        g.items.map(r => '<tr>' +
+          '<td><div class="rn">' + (r.star ? '<em>★</em>' : '') + esc(r.name) +
+            (r.makers ? '<span class="rm">' + esc(r.makers) + '</span>' : '') + '</div></td>' +
+          '<td><span class="rt ' + typeCls(r.type) + '">' + esc(r.type || '—') + '</span></td>' +
+          '<td><span class="rv">' + esc(r.verdict || '—') + '</span></td>' +
+          '<td class="rd">' + esc(r.detail || r.do || '') + '</td>' +
+        '</tr>').join('') + '</tbody></table></div>').join('');
+  }
+
+  $('dxTables').innerHTML = dr.list.map(d => {
+    const c = d.counts || {};
+    const rows = d.jobs.map(j => {
+      const must = (j.must || []).join('；');
+      return '<tr>' +
+        '<td><div class="dx-job">' + esc(j.title) + '<span class="dx-co">' + esc(j.company) + '</span></div></td>' +
+        '<td>' + esc(j.meta || '—') + '</td>' +
+        '<td><div class="dx-sal">' + esc(j.salary || '—') + '</div></td>' +
+        '<td class="dx-must">' + (must ? esc(must) : '<em>JD 未列明细</em>') + '</td>' +
+        '<td><span class="dx-st ' + esc(j.status) + '">' + esc(j.status_text || DX_STATUS[j.status] || '') + '</span>' +
+          (function(t){ return t ? '<span class="dx-blk"' + (j.note ? ' title="' + esc(j.note) + '"' : '') +
+            '>' + (j.blocker ? '卡：' : '') + esc(t) + '</span>' : ''; })(j.blocker || j.short || '') +
+        '</td>' +
+        '</tr>';
+    }).join('');
+    return '<div class="dx-dir"><div class="dx-dh"><b>' + esc(d.label) + '</b>' +
+      '<span>' + esc(d.summary || '') + '</span>' +
+      '<span class="dx-cnt">能投 ' + num(c.fit, 0) + ' · 补一点 ' + num(c.patch, 0) +
+      ' · 可试 ' + num(c.try, 0) + ' · 够不着 ' + num(c.no, 0) + '</span></div>' +
+      '<div class="dx-tbl"><table class="dxt"><thead><tr>' +
+      '<th>岗位</th><th>公司 · 城市 · 门槛</th><th>薪资</th><th>硬性要求（JD 摘录）</th><th>你的状态</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+  }).join('');
+
+  const gaps = dr.gaps || [], plan = dr.plan || [], cav = dr.caveats || [];
+  if(gaps.length || plan.length || cav.length){
+    $('dxMore').hidden = false;
+    $('dxBody').innerHTML =
+      (gaps.length ? '<h4>离这两个方向各差什么</h4>' + gaps.map(g =>
+        '<div style="margin:6px 0 10px"><span class="k">' + esc(g.title) + '</span><ul>' +
+        (g.miss || []).map(m => '<li><span class="k">' + esc(m.k) + '</span>：' + esc(m.v) + '</li>').join('') +
+        '</ul><div style="margin-top:4px;color:var(--dim)">不用补：' + esc(g.strengths || '—') + '</div>' +
+        '<div style="margin-top:3px">可以这样讲：' + esc(g.story || '—') + '</div></div>').join('') : '') +
+      (plan.length ? '<h4>如果走路径 A，具体怎么做</h4><ol>' + plan.map(p =>
+        '<li><span class="k">' + esc(p.title) + '</span>：' + esc(p.body) + '</li>').join('') + '</ol>' : '') +
+      (cav.length ? '<h4>三个必须说清的坑</h4><ul>' + cav.map(x =>
+        '<li class="warnline">' + esc(x) + '</li>').join('') + '</ul>' : '');
+  }
+}
+
 async function load(){
   try{
-    const r = await fetch('/api/job-families?t=' + Date.now(), {cache:'no-store'});
-    const j = await r.json();
+    const r = await fetch('/api/job-families?t=' + Date.now(), {cache:'no-store'});    const j = await r.json();
     if(!j.ok){
       $('sub').textContent = '数据源不可用';
       $('stats').innerHTML = '';
@@ -330,7 +543,7 @@ async function load(){
     $('sub').innerHTML = '只读 · 数据源 <code style="background:#232731;border-radius:4px;padding:1px 5px">'+
       esc(j.source)+'</code> · 更新于 '+esc(j.source_mtime||'—')+
       ' · 岗位族按匹配分排序，点任意行展开门槛分布与简历入口';
-    renderStats(); renderChips(); renderTable();
+    renderStats(); renderChips(); renderTable(); renderDirections(j.directions);
   }catch(e){
     $('sub').textContent = '接口不可用';
     $('tb').innerHTML = '';

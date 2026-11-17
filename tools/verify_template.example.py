@@ -35,15 +35,15 @@ EXCLUDE_DIRS = {
 # 允许改动的源文件 / 生成物：不进历史基线
 EXCLUDE_FILES = {
     'server.js', 'prob.js', 'cleanup.py', '.gitignore', 'README.md',
-    '启动招聘服务.bat', '招聘跟踪总览.html',
+    '启动服务.bat', 'app.html',
     '工作台.html', '工作台-投递台账.html', 'workbench_readonly.js',
     '工作台-岗位判断.html', '工作台-文档.html', '工作台-首页.html',
     '.workbuddy',
 }
 # 允许改动的子目录内源文件（按相对路径精确排除）
 EXCLUDE_REL_PATHS = {
-    'runs/20261114-app/app.template.html',
-    'runs/20261114-app/build.js',
+    'app/app.template.html',
+    'app/build.js',
     'jkit/conditions.py',
     'jkit/conditions_loader.py',
     'docs/模板导出清单.md',
@@ -59,9 +59,22 @@ TEMPLATE_GLOBS = [
     'templates/**/*', 'tools/*.example.py', 'tools/README.md',
     '工作台.html', '工作台-投递台账.html', 'workbench_readonly.js',
     '工作台-岗位判断.html', '工作台-文档.html', '工作台-首页.html',
+    '工作台-定位.html', '工作台-投递条件.html',
     # 服务端 / 概率引擎 / 清理：中性化后进模板轨（导出的路径映射见 tools/sync_template.py）
-    'server.js', 'prob.js', 'cleanup.py',
-    'app/*.js', 'app/*.html',
+    'server.js', 'prob.js', 'cleanup.py', 'job_bus.js', 'conditions_api.js', 'atlas_api.js',
+    'inbox_bridge.js', 'pipe_bridge.js', 'pipe_client.js',
+    'app/*.js', 'app/*.html', 'data_store.js', 'ledger_import.js',
+    # 档案：画像唯一写入口 + 简历上传/解析（不含任何个人信息，姓名不提取）
+    'profile_store.js', 'resume_api.js', '工作台-档案.html', 'assets/*.css',
+    # 开箱即跑所需：一键初始化、构建入口、npm 脚本、启动脚本、目录说明
+    'package.json', 'tools/setup.py', 'tools/build.js', '启动服务.bat',
+    'tests/*.js', 'tests/*.py',
+    # 演示模式：配置 + 流水 + 示例数据，让 clone 下来不配任何东西也能看到界面效果
+    'config/demo/*.json', 'runs/demo/*.jsonl', 'demo_data/*',
+    # 投递引擎（在你自己的浏览器里点按钮，不含凭证）；模板里只放空白事实模板
+    'jkit/**/*.py', 'jkit/**/*.js', 'jkit/**/*.json', 'jkit/**/*.md',
+    'data/README.md', 'config/local/README.md', 'rules/local/README.md',
+    'workbuddy_out/README.md', 'README.md', '.gitignore', '.gitattributes', 'LICENSE',
 ]
 # 通用兜底正则（不含任何实例数据）
 GENERIC_PATTERNS = [
@@ -71,7 +84,7 @@ GENERIC_PATTERNS = [
     r'api[_-]?key\s*[:=]\s*["\x27]?[A-Za-z0-9_-]{16,}',
 ]
 DEFAULT_PATTERNS_FILE = 'config/local/sensitive_patterns.json'
-TEXT_EXT = {'.json', '.jsonl', '.md', '.py', '.html', '.js', '.txt', '.yml', '.yaml', '.example', ''}
+TEXT_EXT = {'.json', '.jsonl', '.md', '.py', '.html', '.js', '.css', '.txt', '.yml', '.yaml', '.bat', '.example', ''}
 
 
 def rel(p: Path, root: Path) -> str:

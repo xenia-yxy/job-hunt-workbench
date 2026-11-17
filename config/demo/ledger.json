@@ -1,0 +1,78 @@
+{
+ "campus": [
+  {
+   "id": "demo-campus-1",
+   "company": "示例科技有限公司",
+   "role": "前端开发工程师",
+   "status": "已投递",
+   "stage": "简历完善",
+   "salary": "8-12K",
+   "type": "校招网申",
+   "is_read": true,
+   "summary": "已投递，等待简历筛选结果。",
+   "note": "演示记录：校招渠道，进度由对方排期决定。"
+  }
+ ],
+ "platform_a": [
+  {
+   "id": "demo-a-1",
+   "company": "示例数据服务",
+   "role": "产品经理（数据方向）",
+   "status": "沟通中",
+   "stage": "已投递",
+   "salary": "15-25K",
+   "type": "平台",
+   "is_read": true,
+   "summary": "HR 已回复，约了下周电话沟通。",
+   "note": "演示记录：有来有回，下一步给一个具体可面时间。",
+   "messages": [
+    {
+     "from": "我",
+     "text": "你好，看过您的职位，觉得比较适合自己，希望进一步沟通。",
+     "time": "",
+     "src": "演示"
+    },
+    {
+     "from": "HR",
+     "text": "方便的话下周一下午电话聊一下？",
+     "time": "",
+     "src": "演示"
+    }
+   ]
+  },
+  {
+   "id": "demo-a-2",
+   "company": "示例云服务",
+   "role": "技术支持工程师",
+   "status": "等对方",
+   "stage": "已投递",
+   "salary": "7-10K",
+   "type": "平台",
+   "is_read": false,
+   "summary": "已投递，三天内无回应可低成本放弃。",
+   "note": "演示记录：已投出，等回复。"
+  }
+ ],
+ "platform_b": [
+  {
+   "id": "demo-b-1",
+   "company": "示例智能硬件",
+   "role": "交付工程师",
+   "status": "待我回复",
+   "stage": "有面试往来",
+   "salary": "10-14K",
+   "type": "平台",
+   "is_read": true,
+   "summary": "HR 问了到岗时间和期望薪资，需要回复。",
+   "note": "演示记录：这条在等我，24 小时内回。",
+   "messages": [
+    {
+     "from": "HR",
+     "text": "你最快什么时候能到岗？期望薪资多少？",
+     "time": "",
+     "src": "演示"
+    }
+   ]
+  }
+ ]
+}

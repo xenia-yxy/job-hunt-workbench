@@ -1,0 +1,48 @@
+{
+  "schema": "profile/v2",
+  "_note": "演示画像（编造值，可直接改可删）。用来让 clone 下来的工作台一打开就有内容看；真实使用时删掉这份、自己传简历或手填。仍然不含姓名。",
+  "updated_at": "2026-01-05T10:00:00+08:00",
+  "identity": {
+    "age": 24,
+    "education": "本科",
+    "major": "软件工程",
+    "graduation": "2026",
+    "city": "深圳",
+    "city_code": "",
+    "work_years": 0
+  },
+  "needs": {
+    "target_roles": ["前端开发", "AI应用"],
+    "salary_expect": "8-12K",
+    "salary_floor": 7000,
+    "locations": ["深圳"],
+    "work_mode": ["坐班", "混合"],
+    "accept_business_trip": "有限接受",
+    "accept_onsite": "接受",
+    "accept_overtime": "偶尔可以",
+    "available_from": "随时",
+    "deal_breakers": ["外包派驻", "纯销售", "单休"],
+    "raw": "示例：偏产品向的前端，希望有真实业务场景，能接受短期驻场。"
+  },
+  "intent": { "raw": "示例：偏产品向的前端，希望有真实业务场景，能接受短期驻场。", "families": ["fam01", "fam03"] },
+  "conditions_profile": {
+    "education": "本科",
+    "graduation": "2026",
+    "exp_years": 0,
+    "exp_ceiling_years": 3,
+    "salary_floor": 7000,
+    "allow_intern": false,
+    "tech_stack": ["TypeScript", "React", "Vue", "Node.js", "Docker"]
+  },
+  "target_filters": {},
+  "sources": {
+    "identity.age": { "by": "resume", "at": "2026-01-05T10:00:00+08:00" },
+    "identity.education": { "by": "resume", "at": "2026-01-05T10:00:00+08:00" },
+    "identity.major": { "by": "resume", "at": "2026-01-05T10:00:00+08:00" },
+    "identity.graduation": { "by": "resume", "at": "2026-01-05T10:00:00+08:00" },
+    "identity.city": { "by": "manual", "at": "2026-01-05T10:00:00+08:00" },
+    "identity.work_years": { "by": "resume", "at": "2026-01-05T10:00:00+08:00" },
+    "needs.salary_floor": { "by": "manual", "at": "2026-01-05T10:00:00+08:00" }
+  },
+  "resume": { "current": null, "versions": [] }
+}

@@ -1,0 +1,41 @@
+{
+ "schema": "families/v1",
+ "_note": "演示用族 id 契约：把 demo_data/metrics.example.json 里的族名映射成稳定 id。真实使用时按自己的方向改这里——判断(metrics_key)、投递(conditions)、简历(resume) 三边都按 id 引用。score_family 指判分词表（product / tech_support / project_mgmt / delivery / junior），没有就填 other。",
+ "metrics_source": "demo_data/metrics.example.json",
+ "resume_dir": "demo_data",
+ "resume_pattern": "简历_{label}.html",
+ "active_order": [
+  "fam01",
+  "fam02",
+  "fam03"
+ ],
+ "families": {
+  "fam01": {
+   "label": "前端开发",
+   "metrics_key": "前端开发",
+   "conditions": null,
+   "resume": null,
+   "score_family": "other",
+   "active": true,
+   "order": 1
+  },
+  "fam02": {
+   "label": "后端开发",
+   "metrics_key": "后端开发",
+   "conditions": null,
+   "resume": null,
+   "score_family": "other",
+   "active": true,
+   "order": 2
+  },
+  "fam03": {
+   "label": "AI应用",
+   "metrics_key": "AI应用",
+   "conditions": null,
+   "resume": null,
+   "score_family": "other",
+   "active": true,
+   "order": 3
+  }
+ }
+}

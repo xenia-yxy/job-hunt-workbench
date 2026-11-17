@@ -1,0 +1,40 @@
+{
+  "schema": "profile/v2",
+  "_note": "「我是谁」的骨架。不要写姓名——判断一个方向要不要投，用不上名字，留着只是增加泄露面。identity 是属性，needs 是要求，conditions_profile 是投递筛选真正读的那一份（conditions/*.json 通过 profile_ref 引用）。全部字段都可以留空，页面上传简历会自动填。",
+  "updated_at": "",
+  "identity": {
+    "age": null,
+    "education": "",
+    "major": "",
+    "graduation": "",
+    "city": "",
+    "city_code": "",
+    "work_years": null
+  },
+  "needs": {
+    "target_roles": [],
+    "salary_expect": "",
+    "salary_floor": null,
+    "locations": [],
+    "work_mode": [],
+    "accept_business_trip": "",
+    "accept_onsite": "",
+    "accept_overtime": "",
+    "available_from": "",
+    "deal_breakers": [],
+    "raw": ""
+  },
+  "intent": { "raw": "", "families": [] },
+  "conditions_profile": {
+    "education": "",
+    "graduation": "",
+    "exp_years": null,
+    "exp_ceiling_years": 3,
+    "salary_floor": null,
+    "allow_intern": false,
+    "tech_stack": []
+  },
+  "target_filters": {},
+  "sources": {},
+  "resume": { "current": null, "versions": [] }
+}

@@ -201,6 +201,22 @@ body.taskopen .task{transform:none}
 .resline{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;
   margin:5px 0;font-size:11px}
 .empty{padding:16px 10px;color:var(--mut);font-size:11.5px;line-height:1.7}
+/* 执行记录时间线：指令→回执→结果→写入 */
+.ilist{display:flex;flex-direction:column;gap:6px}
+.icard{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:11px;line-height:1.6}
+.icard .ih{display:flex;align-items:center;gap:6px;cursor:pointer}
+.icard .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#58606e}
+.icard .dot.done{background:var(--ok)}.icard .dot.failed{background:#e0705f}
+.icard .dot.pending,.icard .dot.running{background:var(--warn)}
+.icard .it{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#cfd7e3}
+.icard .im{color:var(--dim);font-size:9.5px;flex-shrink:0}
+.icard .ibody{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:none}
+.icard.open .ibody{display:block}
+.icard .seg{margin:4px 0}
+.icard .seg b{color:#9fb0c8;font-weight:600;font-size:10px;display:block;margin-bottom:1px}
+.icard .seg pre{margin:0;white-space:pre-wrap;word-break:break-all;font:10.5px/1.55 inherit;color:var(--mut);
+  background:rgba(0,0,0,.18);border-radius:5px;padding:5px 7px;max-height:150px;overflow:auto}
+.icard .src{display:inline-block;font-size:9px;color:#a8c6f5;background:rgba(122,168,255,.14);border-radius:20px;padding:0 5px;margin-left:4px}
 .scrim{position:fixed;inset:46px 0 0 0;background:rgba(0,0,0,.34);z-index:39;opacity:0;
   pointer-events:none;transition:opacity .2s}
 body.taskopen .scrim{opacity:1;pointer-events:auto}
@@ -219,7 +235,8 @@ body.taskopen .scrim{opacity:1;pointer-events:auto}
   .top .proj{display:inline}
   .crumb .c2{max-width:36vw}
 }
-</style></head>
+</style>
+<link rel="stylesheet" href="/assets/ui.css"></head>
 <body>
 <div class="app">
   <aside class="side" id="side">
@@ -240,7 +257,7 @@ body.taskopen .scrim{opacity:1;pointer-events:auto}
     </div>
     <nav class="nav" id="nav"></nav>
     <div class="sstat" id="sstat" title="数据概况 · 点击回到首页">
-      <div><div class="v" id="ssFam">—</div><div class="k">岗位族</div></div>
+      <div><div class="v" id="ssFam">—</div><div class="k">在投 / 全量族</div></div>
       <div><div class="v" id="ssSample">—</div><div class="k">有效样本</div></div>
       <div><div class="v" id="ssLedger">—</div><div class="k">台账事件</div></div>
       <div><div class="v" id="ssViews">—</div><div class="k">可打开视图</div></div>
@@ -300,6 +317,12 @@ body.taskopen .scrim{opacity:1;pointer-events:auto}
     <div id="taskList" class="mut" style="font-size:11px">正在读取…</div>
     <p class="mut" style="margin:14px 0 0;font-size:10.5px">已落盘结果（只列文件名）</p>
     <div id="resultList" class="mut" style="font-size:11px">正在读取…</div>
+    <p class="mut" style="margin:14px 0 0;font-size:10.5px">执行记录 · 指令→回执→结果→写入（刷新不丢）</p>
+    <div style="display:flex;gap:6px;align-items:center;margin:5px 0">
+      <select id="ifKind" style="flex:1;font-size:11px;padding:4px 6px"><option value="">全部类型</option></select>
+      <button id="ifRefresh" class="copy" style="width:auto;padding:4px 9px;font-size:10.5px">↻ 刷新</button>
+    </div>
+    <div id="interactionList" class="mut" style="font-size:11px">正在读取…</div>
   </div>
 </aside>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -561,7 +584,10 @@ frame.addEventListener('load', () => setTimeout(probeFrame, 40));
 
 /* ---------------- 配置 / 任务接口 ---------------- */
 async function loadSideStats(){
-  const [jf, led] = await Promise.all([
+  // 「族」这个数字按在投口径显示：22 是全量全景，6 才是现在真正在投的方向。
+  // 两个数字混淆会让侧栏和定位页对不上，所以这里取契约里的 active 数。
+  const [fam, jf, led] = await Promise.all([
+    fetch('/api/families?t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).catch(() => null),
     fetch('/api/job-families?t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).catch(() => null),
     fetch('/api/ledger-index?limit=1&t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).catch(() => null)
   ]);
@@ -570,7 +596,8 @@ async function loadSideStats(){
     el.textContent = ok ? v : '—';
     el.classList.toggle('na', !ok);
   };
-  set('ssFam', jf && jf.ok ? jf.totals.families : '', jf && jf.ok);
+  const t = (fam && fam.ok && fam.totals) || {};
+  set('ssFam', t.active != null ? (t.active + ' / ' + t.all) : '', fam && fam.ok);
   set('ssSample', jf && jf.ok ? jf.total : '', jf && jf.ok);
   set('ssLedger', led && led.ok ? led.totals.lines : '', led && led.ok);
 }
@@ -645,7 +672,81 @@ async function loadWorkbuddy(){
         (d.files.length ? '<div class="mut">'+d.files.slice(0,3).map(f=>esc(f.name)).join('、')+
           (d.files.length>3?' …':'')+'</div>' : '')+'</div>').join('');
   }catch(e){ $('resultList').textContent = '结果清单接口不可用'; }
+  loadInteractions();
 }
+
+/* 执行记录时间线（P3）：指令 → 回执 → 结果 → AI 写入，刷新不丢 */
+async function loadInteractions(){
+  const kind = ($('ifKind') && $('ifKind').value) || '';
+  try{
+    const r = await fetch('/api/interactions?limit=80'+(kind?'&kind='+encodeURIComponent(kind):'')
+      +'&t='+Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    const items = j.interactions || [];
+    // 填 kind 下拉（只在首次为空时）
+    if($('ifKind') && $('ifKind').options.length <= 1){
+      const kindsSet = {};
+      (j.interactions||[]).forEach(x => { if(x.kind) kindsSet[x.kind]=1; });
+      Object.keys(kindsSet).sort().forEach(k => {
+        const op=document.createElement('option'); op.value=k; op.textContent=k; $('ifKind').appendChild(op);
+      });
+    }
+    // 用全量（未过滤）再填一次下拉，避免筛选后选项丢失
+    if($('ifKind') && $('ifKind').options.length <= 1){
+      fetch('/api/interactions?limit=200&t='+Date.now(), {cache:'no-store'})
+        .then(x=>x.json()).then(d=>{
+          const ks={}; (d.interactions||[]).forEach(x=>{if(x.kind)ks[x.kind]=1;});
+          Object.keys(ks).sort().forEach(k=>{
+            const op=document.createElement('option'); op.value=k; op.textContent=k; $('ifKind').appendChild(op);
+          });
+        }).catch(()=>{});
+    }
+    if(!items.length){
+      $('interactionList').innerHTML='<div class="empty">暂无执行记录。点任意分析/调研/投递按钮后，这里会按时间显示完整链路。</div>';
+      return;
+    }
+    $('interactionList').innerHTML='<div class="ilist">'+items.map(x=>{
+      const st=(x.status||'').toLowerCase();
+      const dot=(st==='done'||st==='delivered')?'done':(st==='failed'||st==='error')?'failed':
+        (st==='pending'||st==='running')?'pending':'';
+      const title=x.command_text ? x.command_text.split(/\r?\n/)[0].slice(0,60)
+        : (x.title||x.kind||x.id);
+      const src=x.command_source && x.command_source!=='page'
+        ? '<span class="src">'+esc(x.command_source)+'</span>' : '';
+      const at=(x.created_at||'').slice(5,16).replace('T',' ');
+      return '<div class="icard" data-id="'+esc(x.id)+'">'+
+        '<div class="ih"><span class="dot '+dot+'"></span>'+
+        '<span class="it">'+esc(title)+src+'</span>'+
+        '<span class="im">'+esc(x.kind||'')+' · '+esc(at)+'</span></div>'+
+        '<div class="ibody"><div class="mut">任务 '+esc(x.id)+' · 状态 '+esc(x.status||'')+
+        (x.summary?' · '+esc(x.summary):'')+'</div><div class="iload">展开中…</div></div></div>';
+    }).join('')+'</div>';
+    $('interactionList').querySelectorAll('.icard .ih').forEach(h=>{
+      h.onclick=async ()=>{
+        const card=h.parentElement;
+        if(card.classList.contains('open')){ card.classList.remove('open'); return; }
+        card.classList.add('open');
+        const box=card.querySelector('.iload');
+        try{
+          const d=await (await fetch('/api/interactions/'+encodeURIComponent(card.dataset.id)
+            +'?t='+Date.now(),{cache:'no-store'})).json();
+          const a=(d&&d.artifacts)||{};
+          const w=(d&&d.interaction&&d.interaction.ai_writes)||[];
+          const segs=[];
+          if(a.request) segs.push('<div class="seg"><b>① 指令原文</b><pre>'+esc(a.request)+'</pre></div>');
+          if(a.response) segs.push('<div class="seg"><b>② 回执</b><pre>'+esc(a.response)+'</pre></div>');
+          if(a.result) segs.push('<div class="seg"><b>③ 结果</b><pre>'+esc(a.result.slice(0,3000))+'</pre></div>');
+          if(w.length) segs.push('<div class="seg"><b>④ AI 写入</b><pre>'+
+            esc(w.map(x=>x.target+': '+(x.after==null?'—':String(x.after).slice(0,120))).join('\n'))+'</pre></div>');
+          box.innerHTML=segs.length?segs.join(''):'<div class="mut">这条记录暂无产物文件。</div>';
+        }catch(e){ box.innerHTML='<div class="mut">详情读取失败。</div>'; }
+      };
+    });
+  }catch(e){
+    $('interactionList').textContent='执行记录接口不可用';
+  }
+}
+
 
 /* ---------------- 复制 ---------------- */
 function copyText(text){
@@ -792,6 +893,8 @@ document.addEventListener('click', e => {
 
 if(lsGet(LS.hidden) === '1') document.body.classList.add('noside');
 if(window.innerWidth <= 980) document.body.classList.add('noside');
+if($('ifKind')) $('ifKind').onchange = () => loadInteractions();
+if($('ifRefresh')) $('ifRefresh').onclick = () => loadInteractions();
 checkHealth(); setInterval(checkHealth, 30000);
 loadAll(); loadWorkbuddy(); loadSideStats();
 </script>

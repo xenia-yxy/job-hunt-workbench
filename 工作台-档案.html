@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的档案</title>
+<style>
+:root{
+  --bg:#0c0e13;--panel:#14181f;--panel2:#1b2029;--line:#232935;--line2:#333b4b;
+  --ink:#e9edf3;--mut:#9aa4b5;--dim:#6d7789;--accent:#5b9dff;--ok:#4fd1a5;
+  --warn:#f2bf68;--bad:#ec7a68;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:13.5px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+button,input,select,textarea{font-family:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 22px 60px}
+
+header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}
+header.top h1{margin:0;font-size:22px;letter-spacing:.3px}
+header.top .sub{margin:6px 0 0;font-size:12.5px;color:var(--mut);line-height:1.7;max-width:820px}
+.state{border:1px solid var(--line2);border-radius:999px;padding:3px 11px;font-size:11.5px;color:var(--mut);
+  white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:6px}
+.state i{width:6px;height:6px;border-radius:50%;background:var(--dim);font-style:normal}
+.state.on i{background:var(--ok);box-shadow:0 0 0 3px rgba(79,209,165,.13)}
+.state.off i{background:var(--bad)}
+
+/* 两列：宽的留给简历，窄的放画像与需求 */
+.cols{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:1000px){.cols{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.full{grid-column:1/-1}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.35),0 10px 30px -24px #000;overflow:hidden}
+.card-h{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.card-h h2{margin:0;font-size:14px;font-weight:600}
+.card-h .n{flex-shrink:0;width:20px;height:20px;border-radius:6px;background:rgba(91,157,255,.14);
+  border:1px solid rgba(91,157,255,.32);color:#bcd7ff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center}
+.card-h .meta{flex:1;min-width:0;font-size:11.5px;color:var(--dim);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.card-b{padding:16px}
+
+/* 上传区 */
+.drop{border:1.5px dashed var(--line2);border-radius:12px;padding:26px 18px;text-align:center;
+  cursor:pointer;transition:border-color .15s,background .15s;background:rgba(255,255,255,.012)}
+.drop:hover,.drop.over{border-color:rgba(91,157,255,.7);background:rgba(91,157,255,.06)}
+.drop .ic{font-size:24px;line-height:1;margin-bottom:8px;opacity:.9}
+.drop b{font-size:13.5px;display:block;margin-bottom:4px}
+.drop small{color:var(--dim);font-size:11.5px;display:block;line-height:1.7}
+.drop .fmts{margin-top:9px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.fmt{border:1px solid var(--line2);border-radius:5px;padding:0 6px;font-size:10.5px;color:var(--mut);
+  font-family:ui-monospace,Consolas,monospace}
+
+.paste-wrap{margin-top:10px}
+.paste-wrap textarea{width:100%;min-height:92px;border:1px solid var(--line2);background:var(--panel2);
+  color:var(--ink);border-radius:9px;padding:10px 12px;font-size:13px;outline:none;resize:vertical}
+.paste-wrap textarea:focus{border-color:rgba(91,157,255,.7);box-shadow:0 0 0 3px rgba(91,157,255,.12)}
+
+/* 简历列表 */
+.rlist{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.ritem{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;
+  padding:9px 11px;background:var(--panel2)}
+.ritem.cur{border-color:rgba(91,157,255,.45);background:rgba(91,157,255,.07)}
+.ritem .fi{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);
+  font-family:ui-monospace,Consolas,monospace;flex-shrink:0}
+.ritem .nm{flex:1;min-width:0}
+.ritem .nm b{font-size:12.5px;font-weight:500;display:block;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.ritem .nm small{color:var(--dim);font-size:10.5px}
+.ritem .acts{display:flex;gap:5px;flex-shrink:0}
+
+/* 解析结果表 */
+.ptable{margin-top:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ptable table{width:100%;border-collapse:collapse;font-size:12.5px}
+.ptable th{text-align:left;font-size:11px;color:var(--mut);font-weight:600;letter-spacing:.04em;
+  padding:8px 11px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--line)}
+.ptable td{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,.045);vertical-align:top}
+.ptable tr:last-child td{border-bottom:0}
+.ptable .ev{color:var(--dim);font-size:11.5px;line-height:1.6;word-break:break-word}
+.ptable .val{color:#e8eef8;font-weight:500}
+.ptable input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.ptable tr.off td{opacity:.45}
+
+/* 字段 + 来源 */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px 12px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld > .lb{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mut)}
+.src{font-size:9.5px;padding:0 5px;border-radius:999px;border:1px solid var(--line2);color:var(--dim);
+  line-height:1.6;flex-shrink:0}
+.src.resume{color:#a9d9ff;border-color:rgba(91,157,255,.4);background:rgba(91,157,255,.1)}
+.src.agent{color:#ffd9a4;border-color:rgba(242,191,104,.4);background:rgba(242,191,104,.1)}
+.src.manual{color:#b6e8d5;border-color:rgba(79,209,165,.35);background:rgba(79,209,165,.08)}
+.fld input,.fld select{border:1px solid var(--line2);background:var(--panel2);color:var(--ink);
+  border-radius:8px;padding:7px 10px;font-size:13px;outline:none;min-width:0;width:100%}
+.fld input:focus,.fld select:focus{border-color:rgba(91,157,255,.7);
+  box-shadow:0 0 0 3px rgba(91,157,255,.12)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.chip{border:1px solid var(--line2);background:var(--panel2);border-radius:6px;padding:2px 8px;
+  font-size:11.5px;color:#c3cfe0;display:inline-flex;align-items:center;gap:6px;line-height:1.8}
+.chip .x{cursor:pointer;color:#7c8494;font-size:12px;line-height:1}
+.chip .x:hover{color:var(--bad)}
+.addchip{display:flex;gap:6px;margin-top:7px}
+.addchip input{flex:1;min-width:0;border:1px solid var(--line2);background:var(--panel2);color:var(--ink);
+  border-radius:7px;padding:5px 9px;font-size:12px;outline:none}
+
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+.btn{border:1px solid var(--line2);background:var(--panel2);color:#c8d2e2;border-radius:9px;
+  padding:7px 14px;font-size:13px;cursor:pointer;transition:border-color .14s,background .14s,color .14s}
+.btn:hover{border-color:#46516a;background:#222833;color:#eef2f8}
+.btn.pri{border-color:rgba(91,157,255,.6);
+  background:linear-gradient(180deg,rgba(91,157,255,.26),rgba(91,157,255,.15));color:#eaf2ff;font-weight:600}
+.btn.pri:hover{background:linear-gradient(180deg,rgba(91,157,255,.36),rgba(91,157,255,.2))}
+.btn.sm{padding:4px 10px;font-size:11.5px;border-radius:7px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.tb{border:1px solid var(--line2);background:var(--panel2);color:#b8c3d4;border-radius:7px;
+  padding:3px 9px;font-size:11px;cursor:pointer}
+.tb:hover{border-color:var(--accent);color:#e8f0ff}
+.msg{font-size:11.5px;color:var(--dim)}
+.msg.ok{color:var(--ok)}
+.msg.bad{color:var(--bad)}
+
+.note{border:1px solid var(--line);border-left:2px solid rgba(91,157,255,.55);border-radius:8px;
+  background:rgba(91,157,255,.05);padding:9px 12px;font-size:11.5px;color:var(--mut);line-height:1.7}
+.note b{color:#cfe2ff;font-weight:600}
+
+/* 需求分析输出 */
+.ana{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.aitem{display:flex;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  background:var(--panel2)}
+.aitem .tagv{flex-shrink:0;font-size:10.5px;font-weight:700;border-radius:6px;padding:2px 7px;
+  height:fit-content;letter-spacing:.03em}
+.aitem.ok .tagv{color:#a7f0d2;background:rgba(79,209,165,.14);border:1px solid rgba(79,209,165,.35)}
+.aitem.warn .tagv{color:#ffdca8;background:rgba(242,191,104,.13);border:1px solid rgba(242,191,104,.33)}
+.aitem.bad .tagv{color:#ffbcaf;background:rgba(236,122,104,.13);border:1px solid rgba(236,122,104,.33)}
+.aitem .tx{flex:1;min-width:0;font-size:12.5px;line-height:1.7}
+.aitem .tx small{display:block;color:var(--dim);font-size:11.5px;margin-top:2px}
+.scorebar{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.sc{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel2);min-width:104px}
+.sc b{display:block;font-size:18px;line-height:1.3;font-variant-numeric:tabular-nums}
+.sc small{color:var(--dim);font-size:10.5px}
+
+.jobbox{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:var(--panel2)}
+.jobbox .jh{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:6px}
+.jobbox pre{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Consolas,monospace;
+  font-size:11px;color:var(--mut);background:rgba(0,0,0,.25);border-radius:7px;padding:9px 10px;
+  margin:8px 0 0;max-height:220px;overflow:auto;line-height:1.65}
+.hide{display:none!important}
+.empty{color:var(--dim);font-size:12.5px;text-align:center;padding:18px 10px}
+</style>
+<link rel="stylesheet" href="/assets/ui.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>我的档案</h1>
+      <p class="sub">简历只用来「读属性」：年龄、学历、专业、届别、城市、技能、期望薪资，用来和岗位对表。
+        姓名、电话、邮箱一律不提取、不入库——判断一个岗位要不要投，用不上这些。</p>
+    </div>
+    <span class="state" id="conn"><i></i><span>读取中…</span></span>
+  </header>
+
+  <div class="cols">
+    <!-- ① 简历 -->
+    <section class="card">
+      <div class="card-h">
+        <span class="n">1</span>
+        <h2>简历</h2>
+        <span class="meta" id="rMeta">读取中…</span>
+      </div>
+      <div class="card-b">
+        <div class="drop" id="drop">
+          <div class="ic">⇪</div>
+          <b>把简历拖进来，或点这里选文件</b>
+          <small>上传后自动抽取文本与可用字段，先给你看，确认了才写入档案</small>
+          <div class="fmts">
+            <span class="fmt">.docx</span><span class="fmt">.pdf</span>
+            <span class="fmt">.txt</span><span class="fmt">.md</span><span class="fmt">.html</span>
+          </div>
+        </div>
+        <input type="file" id="file" class="hide" accept=".docx,.pdf,.txt,.md,.markdown,.html,.htm,.doc">
+        <div class="paste-wrap">
+          <textarea id="paste" placeholder="解析不了（老版 .doc、扫描件 PDF）时，把简历正文粘到这里，一样能提取字段。"></textarea>
+          <div class="acts" style="margin-top:8px">
+            <button class="btn sm" id="btnPaste">用粘贴的文本提取</button>
+            <span class="msg" id="pasteMsg"></span>
+          </div>
+        </div>
+
+        <div class="rlist" id="rlist"></div>
+
+        <div class="ptable hide" id="pbox">
+          <table>
+            <thead><tr>
+              <th style="width:34px"></th><th style="width:96px">字段</th>
+              <th style="width:150px">提取值</th><th>原文依据</th>
+            </tr></thead>
+            <tbody id="prows"></tbody>
+          </table>
+          <div style="padding:10px 11px;border-top:1px solid var(--line);display:flex;gap:8px;
+            align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.015)">
+            <button class="btn pri sm" id="btnApply">写入档案</button>
+            <label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--mut)">
+              <input type="checkbox" id="overwrite" style="accent-color:var(--accent)"> 覆盖已有值
+            </label>
+            <span class="msg" id="applyMsg"></span>
+          </div>
+        </div>
+
+        <div class="note" style="margin-top:12px">
+          <b>抽不出文本怎么办</b>：老版 <code>.doc</code> 与扫描件 PDF 没有可靠文本层，硬猜只会写出乱码，
+          所以这里不猜——另存为 <code>.docx</code> 再传，或直接把正文粘到上面。
+        </div>
+      </div>
+    </section>
+
+    <!-- ② 我的情况 -->
+    <section class="card">
+      <div class="card-h">
+        <span class="n">2</span>
+        <h2>我的情况</h2>
+        <span class="meta" id="idMeta">—</span>
+      </div>
+      <div class="card-b">
+        <div class="grid2">
+          <div class="fld"><div class="lb">年龄<span class="src" id="s-age"></span></div>
+            <input id="fAge" type="number" min="14" max="70" placeholder="24"></div>
+          <div class="fld"><div class="lb">学历<span class="src" id="s-edu"></span></div>
+            <select id="fEdu">
+              <option value="">—</option>
+              <option>博士</option><option>硕士</option><option>本科</option><option>大专</option><option>高中</option>
+            </select></div>
+          <div class="fld"><div class="lb">专业<span class="src" id="s-major"></span></div>
+            <input id="fMajor" placeholder="软件工程"></div>
+          <div class="fld"><div class="lb">届别<span class="src" id="s-grad"></span></div>
+            <input id="fGrad" placeholder="2026" inputmode="numeric"></div>
+          <div class="fld"><div class="lb">城市<span class="src" id="s-city"></span></div>
+            <input id="fCity" placeholder="深圳"></div>
+          <div class="fld"><div class="lb">工作年限<span class="src" id="s-years"></span></div>
+            <input id="fYears" type="number" min="0" max="40" step="0.5" placeholder="0"></div>
+          <div class="fld"><div class="lb">到岗时间<span class="src" id="s-from"></span></div>
+            <input id="fFrom" placeholder="随时 / 一个月内"></div>
+        </div>
+
+        <div style="margin-top:13px">
+          <div class="lb" style="font-size:11.5px;color:var(--mut);margin-bottom:5px">
+            技术栈 <span class="src" id="s-tech"></span>
+          </div>
+          <div class="chips" id="techChips"></div>
+          <div class="addchip">
+            <input id="techInput" placeholder="加一项，回车确认（如 TypeScript）">
+            <button class="btn sm" id="btnTech">加</button>
+          </div>
+        </div>
+
+        <div class="acts">
+          <button class="btn pri" id="btnSaveId">保存</button>
+          <span class="msg" id="idMsg"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 求职需求 -->
+    <section class="card">
+      <div class="card-h">
+        <span class="n">3</span>
+        <h2>求职需求</h2>
+        <span class="meta" id="ndMeta">—</span>
+      </div>
+      <div class="card-b">
+        <div class="grid2">
+          <div class="fld"><div class="lb">期望方向</div>
+            <input id="fRoles" placeholder="前端开发 / 全栈"></div>
+          <div class="fld"><div class="lb">期望薪资</div>
+            <input id="fSalary" placeholder="8-12K"></div>
+          <div class="fld"><div class="lb">薪资底线（元/月）</div>
+            <input id="fFloor" type="number" min="0" placeholder="7000"></div>
+          <div class="fld"><div class="lb">期望城市</div>
+            <input id="fLocs" placeholder="深圳"></div>
+          <div class="fld"><div class="lb">出差</div>
+            <select id="fTrip"><option value="">未填</option><option value="接受">接受</option><option value="有限接受">有限接受</option><option value="不接受">不接受</option></select></div>
+          <div class="fld"><div class="lb">驻场</div>
+            <select id="fOnsite"><option value="">未填</option><option value="接受">接受</option><option value="有限接受">有限接受</option><option value="不接受">不接受</option></select></div>
+          <div class="fld"><div class="lb">加班</div>
+            <select id="fOT"><option value="">未填</option><option value="可接受">可接受</option><option value="偶尔可以">偶尔可以</option><option value="不接受">不接受</option></select></div>
+          <div class="fld"><div class="lb">工作方式</div>
+            <input id="fMode" placeholder="坐班 / 混合 / 远程，逗号分隔"></div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+          <div class="fld"><div class="lb">底线条件（踩到就不投，逗号分隔）</div>
+            <input id="fDeal" placeholder="外包派驻、纯销售、单休"></div>
+          <div class="fld"><div class="lb">补充说明</div>
+            <textarea id="fRaw" style="width:100%;min-height:70px;border:1px solid var(--line2);
+              background:var(--panel2);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;
+              outline:none;resize:vertical"
+              placeholder="想投的方向、稳定性偏好、不能接受的排班……写得越具体，判断越准"></textarea></div>
+        </div>
+
+        <div class="acts">
+          <button class="btn pri" id="btnSaveNd">保存</button>
+          <span class="msg" id="ndMsg"></span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ④ 需求分析 -->
+    <section class="card">
+      <div class="card-h">
+        <span class="n">4</span>
+        <h2>需求分析</h2>
+        <span class="meta" id="anaMeta">还没分析</span>
+      </div>
+      <div class="card-b">
+        <div class="note" style="margin-top:0">
+          <b>这一步检查的是「你的条件和你的要求是否自洽」</b>：缺哪些字段会导致投递时判不了、
+          薪资底线和期望是否打架、届别和年限有没有矛盾、方向和技能覆盖差多少。
+          有岗位族市场数据时会补一条「你的底线在该方向能不能落地」的对比。
+        </div>
+        <div class="acts" style="margin-top:12px">
+          <button class="btn pri" id="btnAnalyze">分析我的需求</button>
+          <button class="btn" id="btnAgent" title="按 SOP 交给 WorkBuddy 会话读简历与需求，结果回写到这里">交给 WorkBuddy 补全</button>
+          <span class="msg" id="anaMsg"></span>
+        </div>
+        <div class="scorebar" id="anaScores"></div>
+        <div class="ana" id="anaOut"></div>
+        <div class="jobbox hide" id="jobBox">
+          <div class="jh"><b>WorkBuddy 任务</b><span class="msg" id="jobState">排队中</span></div>
+          <div class="msg" id="jobHint"></div>
+          <pre id="jobCmd"></pre>
+          <div class="acts" style="margin-top:8px">
+            <button class="btn sm" id="btnCopy">复制指令</button>
+            <button class="btn sm" id="btnJobRefresh">刷新状态</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const API = (p, o) => fetch(p, o).then(r => r.json()).catch(() => ({ ok:false, err:'接口不可用' }));
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+const S = { profile:null, resumes:[], analysis:null, pending:null, picked:new Set(), families:null };
+
+const FIELD_LABEL = {
+  age:'年龄', education:'学历', major:'专业', graduation:'届别', city:'城市',
+  work_years:'工作年限', tech_stack:'技术栈', salary_expect:'期望薪资'
+};
+const SRC_LABEL = { manual:'手填', resume:'简历', agent:'分析', import:'导入' };
+
+function fmtSize(n){
+  if(n > 1048576) return (n / 1048576).toFixed(1) + 'MB';
+  if(n > 1024) return Math.round(n / 1024) + 'KB';
+  return n + 'B';
+}
+function fmtTime(t){
+  if(!t) return '';
+  return String(t).replace('T', ' ').slice(5, 16);
+}
+
+/* ---------------- 连接状态 ---------------- */
+function setConn(ok, txt){
+  const c = $('conn');
+  c.className = 'state ' + (ok ? 'on' : 'off');
+  c.querySelector('span').textContent = txt;
+}
+
+/* ---------------- 画像 ---------------- */
+function srcOf(path){
+  const s = (S.profile && S.profile.sources) || {};
+  const v = s[path];
+  if(!v) return '';
+  const by = (v && v.by) || String(v);
+  return '<span class="src ' + esc(by) + '">' + esc(SRC_LABEL[by] || by) + '</span>';
+}
+function renderProfile(){
+  const p = S.profile || {};
+  const id = p.identity || {}, nd = p.needs || {};
+  const cp = p.conditions_profile || {};
+
+  $('fAge').value = id.age != null ? id.age : '';
+  $('fEdu').value = id.education || cp.education || '';
+  $('fMajor').value = id.major || '';
+  $('fGrad').value = id.graduation || cp.graduation || '';
+  $('fCity').value = id.city || '';
+  $('fYears').value = id.work_years != null ? id.work_years : (cp.exp_years != null ? cp.exp_years : '');
+  $('fFrom').value = nd.available_from || id.available_from || '';
+
+  ['age','edu','major','grad','city','years','from','tech'].forEach(k => {
+    const el = $('s-' + k);
+    if(el && el.parentElement) el.parentElement.removeChild(el);
+  });
+  // 来源角标：按「这个字段最后是谁写的」显示，手填/简历/分析三种颜色
+  const put = (nodeId, path) => {
+    const node = $('f' + nodeId);
+    if(!node) return;
+    const lb = node.parentElement.querySelector('.lb');
+    if(!lb) return;
+    let sp = lb.querySelector('.src');
+    if(!sp){ sp = document.createElement('span'); lb.appendChild(sp); }
+    const v = ((S.profile || {}).sources || {})[path];
+    const by = v && (v.by || String(v));
+    sp.className = 'src' + (by ? ' ' + by : '');
+    sp.textContent = by ? (SRC_LABEL[by] || by) : '';
+  };
+  put('Age', 'identity.age'); put('Edu', 'identity.education'); put('Major', 'identity.major');
+  put('Grad', 'identity.graduation'); put('City', 'identity.city'); put('Years', 'identity.work_years');
+  put('From', 'needs.available_from');
+
+  const tech = (cp.tech_stack || (p.identity || {}).tech_stack || []);
+  $('techChips').innerHTML = tech.length
+    ? tech.map(t => '<span class="chip">' + esc(t) + '<span class="x" data-t="' + esc(t) + '">×</span></span>').join('')
+    : '<span class="msg">还没加技术栈</span>';
+  $('techChips').querySelectorAll('.x').forEach(el => {
+    el.onclick = () => {
+      const t = el.dataset.t;
+      const next = (tech || []).filter(x => x !== t);
+      saveProfile({ conditions_profile:{ tech_stack: next } }, 'idMsg');
+    };
+  });
+
+  $('fRoles').value = (nd.target_roles || []).join(' / ');
+  $('fSalary').value = nd.salary_expect || '';
+  $('fFloor').value = nd.salary_floor != null ? nd.salary_floor : (cp.salary_floor != null ? cp.salary_floor : '');
+  $('fLocs').value = (nd.locations || []).join(' / ');
+  $('fTrip').value = nd.accept_business_trip || '';
+  $('fOnsite').value = nd.accept_onsite || '';
+  $('fOT').value = nd.accept_overtime || '';
+  $('fMode').value = (nd.work_mode || []).join(' / ');
+  $('fDeal').value = (nd.deal_breakers || []).join('、');
+  $('fRaw').value = nd.raw || (p.intent || {}).raw || '';
+
+  $('idMeta').textContent = [
+    id.age ? id.age + ' 岁' : '', id.education || '', id.major || '',
+    id.graduation ? id.graduation + ' 届' : '', id.city || ''
+  ].filter(Boolean).join(' · ') || '还没填';
+  $('ndMeta').textContent = [
+    (nd.target_roles || []).length ? (nd.target_roles || []).length + ' 个方向' : '',
+    nd.salary_expect ? '期望 ' + nd.salary_expect : '',
+    nd.salary_floor ? '底线 ' + nd.salary_floor : ''
+  ].filter(Boolean).join(' · ') || '还没填';
+}
+
+async function loadProfile(){
+  const d = await API('/api/profile?t=' + Date.now());
+  if(d && d.ok){
+    S.profile = d.profile || {};
+    renderProfile();
+    setConn(true, d.exists === false ? '已连本地服务 · 还没建档' : '已连本地服务 · 档案已载入');
+    return true;
+  }
+  S.profile = S.profile || {};
+  setConn(false, '未连上服务 · 改动不会落盘');
+  return false;
+}
+
+async function saveProfile(patch, msgId){
+  const j = await API('/api/profile', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(patch)
+  });
+  const el = $(msgId);
+  if(j && j.ok){
+    S.profile = j.profile;
+    renderProfile();
+    if(el){ el.className = 'msg ok'; el.textContent = (j.created ? '已建档' : '已保存') +
+      (j.backup ? ' · 备份 ' + String(j.backup).split('/').pop() : ''); }
+    setTimeout(() => { if(el) el.textContent = ''; }, 5000);
+    return true;
+  }
+  if(el){ el.className = 'msg bad'; el.textContent = '保存失败：' + ((j && (j.hint || j.err)) || '接口不可用'); }
+  return false;
+}
+
+$('btnSaveId').onclick = () => {
+  const age = $('fAge').value.trim(), years = $('fYears').value.trim();
+  const edu = $('fEdu').value;
+  const patch = {
+    identity: {
+      age: age === '' ? null : Number(age),
+      education: edu,
+      major: $('fMajor').value.trim(),
+      graduation: $('fGrad').value.trim(),
+      city: $('fCity').value.trim(),
+      work_years: years === '' ? null : Number(years)
+    },
+    conditions_profile: {
+      education: edu,
+      graduation: $('fGrad').value.trim(),
+      exp_years: years === '' ? null : Number(years)
+    },
+    needs: { available_from: $('fFrom').value.trim() }
+  };
+  saveProfile(patch, 'idMsg');
+};
+
+$('btnSaveNd').onclick = () => {
+  const split = v => v.split(/[,，/、]/).map(x => x.trim()).filter(Boolean);
+  const floor = $('fFloor').value.trim();
+  const patch = {
+    needs: {
+      target_roles: split($('fRoles').value),
+      salary_expect: $('fSalary').value.trim(),
+      salary_floor: floor === '' ? null : Number(floor),
+      locations: split($('fLocs').value),
+      accept_business_trip: $('fTrip').value,
+      accept_onsite: $('fOnsite').value,
+      accept_overtime: $('fOT').value,
+      work_mode: split($('fMode').value),
+      deal_breakers: split($('fDeal').value),
+      raw: $('fRaw').value.trim()
+    },
+    conditions_profile: { salary_floor: floor === '' ? null : Number(floor) },
+    intent: { raw: $('fRaw').value.trim() }
+  };
+  saveProfile(patch, 'ndMsg');
+};
+
+$('btnTech').onclick = addTech;
+$('techInput').onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); addTech(); } };
+function addTech(){
+  const v = $('techInput').value.trim();
+  if(!v) return;
+  const cp = (S.profile && S.profile.conditions_profile) || {};
+  const cur = cp.tech_stack || [];
+  if(cur.indexOf(v) >= 0){ $('techInput').value = ''; return; }
+  $('techInput').value = '';
+  saveProfile({ conditions_profile:{ tech_stack: cur.concat([v]) } }, 'idMsg');
+}
+
+/* ---------------- 简历：列表 ---------------- */
+async function loadResumes(){
+  const d = await API('/api/resume/list?t=' + Date.now());
+  S.resumes = (d && d.items) || [];
+  renderResumes();
+  $('rMeta').textContent = S.resumes.length
+    ? S.resumes.length + ' 份 · 最近 ' + fmtTime(S.resumes[0].uploaded_at)
+    : '还没传过简历';
+}
+
+function renderResumes(){
+  const cur = ((S.profile || {}).resume || {}).current || null;
+  $('rlist').innerHTML = S.resumes.length ? S.resumes.map(it => {
+    const q = it.quality || 'empty';
+    const qtxt = { good:'文本良好', fair:'文本一般', low:'文本较差', empty:'没读到文本' }[q] || q;
+    const qcls = q === 'good' ? 'ok' : (q === 'empty' || q === 'low' ? 'bad' : 'warn');
+    const isCur = cur && cur.id === it.id;
+    return '<div class="ritem' + (isCur ? ' cur' : '') + '">' +
+      '<span class="fi">' + esc((it.ext || '').replace('.', '').toUpperCase() || 'FILE') + '</span>' +
+      '<span class="nm"><b>' + esc(it.name) + (isCur ? ' <span class="badge acc">当前</span>' : '') + '</b>' +
+      '<small>' + fmtSize(it.size) + ' · ' + (it.chars || 0) + ' 字 · ' + fmtTime(it.uploaded_at) +
+      ' · <span class="badge ' + qcls + '">' + esc(qtxt) + '</span></small></span>' +
+      '<span class="acts">' +
+        '<button class="tb" data-act="parse" data-id="' + it.id + '">看字段</button>' +
+        '<button class="tb" data-act="text" data-id="' + it.id + '">看文本</button>' +
+        '<button class="tb" data-act="del" data-id="' + it.id + '">删除</button>' +
+      '</span></div>';
+  }).join('') : '<div class="empty">还没有简历。上传一份，或者把正文粘到上面。</div>';
+
+  $('rlist').querySelectorAll('[data-act]').forEach(b => {
+    b.onclick = () => {
+      const it = S.resumes.find(x => x.id === b.dataset.id);
+      if(!it) return;
+      if(b.dataset.act === 'parse') showParse(it);
+      if(b.dataset.act === 'text') showText(it);
+      if(b.dataset.act === 'del') delResume(it);
+    };
+  });
+}
+
+async function delResume(it){
+  if(!confirm('删除「' + it.name + '」？\n只删这份上传的文件与抽取文本，档案里已写入的字段不受影响。')) return;
+  const j = await API('/api/resume/' + encodeURIComponent(it.id), { method:'DELETE' });
+  if(j && j.ok){ $('pbox').classList.add('hide'); await loadResumes(); }
+  else alert('删除失败：' + ((j && (j.hint || j.err)) || '接口不可用'));
+}
+
+async function showText(it){
+  const j = await API('/api/resume/text?id=' + encodeURIComponent(it.id));
+  if(!j || !j.ok){ alert('读不到文本：' + ((j && j.hint) || '接口不可用')); return; }
+  const w = window.open('', '_blank');
+  if(!w) return;
+  w.document.write('<meta charset="utf-8"><title>' + esc(it.name) + '</title>' +
+    '<style>body{background:#0e1116;color:#e6ebf3;font:13px/1.75 -apple-system,"Microsoft YaHei";padding:24px}' +
+    'pre{white-space:pre-wrap;word-break:break-word;max-width:900px;margin:0 auto}</style>' +
+    '<pre>' + esc(j.text || '（空）') + '</pre>');
+  w.document.close();
+}
+
+/* ---------------- 简历：解析结果 ---------------- */
+function showParse(it){
+  S.pending = it;
+  S.picked = new Set(Object.keys(it.fields || {}));
+  renderParse();
+  $('pbox').classList.remove('hide');
+  $('pbox').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function renderParse(){
+  const it = S.pending;
+  if(!it) return;
+  const f = it.fields || {}, ev = it.evidence || {};
+  const keys = Object.keys(f);
+  if(!keys.length){
+    $('prows').innerHTML = '<tr><td colspan="4" class="empty">这份简历没提取到可用字段。' +
+      (it.note ? '<br>' + esc(it.note) : '') + '</td></tr>';
+    $('btnApply').disabled = true;
+    return;
+  }
+  $('btnApply').disabled = false;
+  $('prows').innerHTML = keys.map(k => {
+    const v = Array.isArray(f[k]) ? f[k].join('、') : f[k];
+    const on = S.picked.has(k);
+    return '<tr class="' + (on ? '' : 'off') + '" data-k="' + esc(k) + '">' +
+      '<td><input type="checkbox" ' + (on ? 'checked' : '') + ' data-k="' + esc(k) + '"></td>' +
+      '<td>' + esc(FIELD_LABEL[k] || k) + '</td>' +
+      '<td class="val">' + esc(v) + '</td>' +
+      '<td class="ev">' + esc(ev[k] || '—') + '</td></tr>';
+  }).join('');
+
+  $('prows').querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.onchange = () => {
+      const k = cb.dataset.k;
+      if(cb.checked) S.picked.add(k); else S.picked.delete(k);
+      cb.closest('tr').classList.toggle('off', !cb.checked);
+    };
+  });
+  if(it.note) $('applyMsg').className = 'msg warn', $('applyMsg').textContent = it.note;
+  else $('applyMsg').textContent = '';
+}
+
+$('btnApply').onclick = async () => {
+  const it = S.pending;
+  if(!it) return;
+  const p = S.profile || {}, id = p.identity || {}, nd = p.needs || {}, cp = p.conditions_profile || {};
+  // 已有值的对照表：不勾「覆盖」时只填空位，避免把手工调过的值冲掉
+  const cur = {
+    age: id.age, education: id.education || cp.education, major: id.major,
+    graduation: id.graduation || cp.graduation, city: id.city,
+    work_years: id.work_years != null ? id.work_years : cp.exp_years,
+    salary_expect: nd.salary_expect, tech_stack: cp.tech_stack
+  };
+  const has = v => !(v == null || v === '' || (Array.isArray(v) && !v.length));
+
+  const fields = {};
+  let skipped = 0;
+  for(const k of S.picked){
+    if(it.fields && it.fields[k] === undefined) continue;
+    if(!$('overwrite').checked && has(cur[k])){ skipped++; continue; }
+    // 技术栈是并集，不是整份替换：简历里没提到的已有技能不能丢
+    if(k === 'tech_stack' && Array.isArray(cur[k])){
+      const merged = cur[k].slice();
+      for(const t of it.fields[k]) if(merged.indexOf(t) < 0) merged.push(t);
+      fields[k] = merged;
+      continue;
+    }
+    fields[k] = it.fields[k];
+  }
+  if(!Object.keys(fields).length){
+    $('applyMsg').className = 'msg bad';
+    $('applyMsg').textContent = skipped ? '选中的字段都已有值；要改就勾「覆盖已有值」' : '至少选一个字段';
+    return;
+  }
+
+  $('applyMsg').className = 'msg'; $('applyMsg').textContent = '写入中…';
+  const j = await API('/api/resume/apply', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ id: it.id, fields })
+  });
+  if(j && j.ok){
+    S.profile = j.profile;
+    renderProfile(); renderResumes();
+    $('applyMsg').className = 'msg ok';
+    $('applyMsg').textContent = '已写入 ' + Object.keys(fields).length + ' 个字段' +
+      (skipped ? '（跳过 ' + skipped + ' 个已有值）' : '') +
+      (j.backup ? ' · 备份 ' + String(j.backup).split('/').pop() : '');
+    showAnalysis(localAnalyze());
+  } else {
+    $('applyMsg').className = 'msg bad';
+    $('applyMsg').textContent = '写入失败：' + ((j && (j.hint || j.err)) || '接口不可用');
+  }
+};
+
+/* ---------------- 上传 ---------------- */
+const drop = $('drop');
+drop.onclick = () => $('file').click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => {
+  e.preventDefault(); drop.classList.remove('over');
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) uploadFile(f);
+};
+$('file').onchange = e => { const f = e.target.files[0]; if(f) uploadFile(f); e.target.value = ''; };
+
+function readAsDataURL(file){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ''));
+    fr.onerror = () => reject(new Error('读文件失败'));
+    fr.readAsDataURL(file);
+  });
+}
+
+async function uploadFile(file){
+  if(file.size > 8 * 1048576){
+    alert('文件 ' + fmtSize(file.size) + '，超过 8MB。请压缩，或另存为 PDF 再传。');
+    return;
+  }
+  const name = file.name || 'resume';
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  if(ext === 'doc'){
+    alert('老版 .doc 解析不了。用 Word 另存为 .docx 再传，或把正文粘到下面的输入框。');
+    return;
+  }
+  drop.querySelector('b').textContent = '上传中…';
+  try {
+    const dataUrl = await readAsDataURL(file);
+    const j = await API('/api/resume/upload', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, data: dataUrl })
+    });
+    if(j && j.ok){
+      await loadResumes();
+      showParse(j.item);
+      $('applyMsg').className = 'msg';
+      $('applyMsg').textContent = j.item.chars
+        ? '读到 ' + j.item.chars + ' 字，勾选要写入的字段'
+        : (j.item.note || '没读到文本，试试粘正文');
+    } else {
+      alert('上传失败：' + ((j && (j.hint || j.err)) || '接口不可用'));
+    }
+  } catch(e){
+    alert('上传失败：' + e.message);
+  } finally {
+    drop.querySelector('b').textContent = '把简历拖进来，或点这里选文件';
+  }
+}
+
+$('btnPaste').onclick = async () => {
+  const text = $('paste').value.trim();
+  if(!text){ $('pasteMsg').className = 'msg bad'; $('pasteMsg').textContent = '先粘点东西进来'; return; }
+  $('pasteMsg').className = 'msg'; $('pasteMsg').textContent = '提取中…';
+  const j = await API('/api/resume/upload', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name:'粘贴文本.txt', data: btoa(unescape(encodeURIComponent(text))), text })
+  });
+  if(j && j.ok){
+    await loadResumes();
+    showParse(j.item);
+    $('pasteMsg').className = 'msg ok';
+    $('pasteMsg').textContent = '已提取';
+  } else {
+    $('pasteMsg').className = 'msg bad';
+    $('pasteMsg').textContent = '提取失败：' + ((j && (j.hint || j.err)) || '接口不可用');
+  }
+};
+
+/* ---------------- 需求分析（本地规则，秒级） ---------------- */
+function numSalary(s){
+  // 「8-12K」「7K 起」→ 取下限，用于和底线比较
+  if(!s) return null;
+  const m = String(s).replace(/\s/g, '').match(/(\d+(?:\.\d+)?)\s*[-~—至到]?\s*(?:(\d+(?:\.\d+)?))?\s*[kK千]/);
+  if(!m) return null;
+  return Math.round(Number(m[1]) * 1000);
+}
+function parseSalaryRange(s){
+  if(!s) return null;
+  const m = String(s).replace(/\s/g, '').match(/(\d+(?:\.\d+)?)\s*[-~—至到]\s*(\d+(?:\.\d+)?)\s*[kK千]/);
+  if(m) return [Number(m[1]) * 1000, Number(m[2]) * 1000];
+  const low = numSalary(s);
+  return low ? [low, low] : null;
+}
+
+function localAnalyze(){
+  const p = S.profile || {};
+  const id = p.identity || {}, nd = p.needs || {}, cp = p.conditions_profile || {};
+  const items = [];
+  const push = (lv, title, detail) => items.push({ lv, title, detail });
+
+  // 1. 字段完备度：缺字段会直接导致投递时判不了
+  const missing = [];
+  if(id.age == null) missing.push('年龄');
+  if(!id.education) missing.push('学历');
+  if(!id.graduation) missing.push('届别');
+  if(!id.city) missing.push('城市');
+  if(id.work_years == null) missing.push('工作年限');
+  if(!(nd.salary_floor || cp.salary_floor)) missing.push('薪资底线');
+  if(!(nd.target_roles || []).length) missing.push('期望方向');
+
+  let completeness = Math.round((7 - missing.length) / 7 * 100);
+  if(missing.length === 0){
+    push('ok', '条件字段齐了', '七项判断必需字段都填上了，投递时不会因为「缺条件」被跳过。');
+  } else if(missing.length <= 3){
+    push('warn', '还缺 ' + missing.length + ' 项', '缺：' + missing.join('、') + '。这几项缺了，筛选口径只能放宽，容易投到不该投的。');
+  } else {
+    push('bad', '缺得比较多（' + missing.length + ' 项）', '缺：' + missing.join('、') + '。建议先补齐，或者上一份简历让它自动带出来。');
+  }
+
+  // 2. 届别 vs 工作年限
+  const grad = Number(id.graduation || cp.graduation || 0);
+  const years = id.work_years != null ? Number(id.work_years) : Number(cp.exp_years || 0);
+  const nowY = new Date().getFullYear();
+  if(grad && years >= 2 && grad >= nowY){
+    push('bad', '届别和年限对不上', '写的是 ' + grad + ' 届，但工作年限填了 ' + years + ' 年。HR 一眼就能看出矛盾，建议按实习/项目折算。');
+  } else if(grad && grad > nowY + 1){
+    push('warn', '届别偏未来', grad + ' 届超过当前年份太多，社招岗位会把你当在校生筛掉。');
+  } else if(grad){
+    push('ok', '届别与年限自洽', grad + ' 届 · ' + years + ' 年经验，按应届/初级口径投不会自相矛盾。');
+  }
+
+  // 3. 期望 vs 底线
+  const range = parseSalaryRange(nd.salary_expect);
+  const floor = Number(nd.salary_floor || cp.salary_floor || 0);
+  if(range && floor){
+    if(floor > range[0]){
+      push('warn', '底线高于期望下限', '期望写 ' + nd.salary_expect + '（下限 ' + (range[0] / 1000) + 'K），底线却是 ' +
+        (floor / 1000) + 'K。按底线筛会把期望区间里偏低的那部分直接砍掉。');
+    } else {
+      push('ok', '薪资口径一致', '期望 ' + nd.salary_expect + '，底线 ' + (floor / 1000) + 'K，留了 ' +
+        ((range[0] - floor) / 1000).toFixed(1) + 'K 的浮动空间。');
+    }
+  } else if(!range && !floor){
+    push('warn', '没写薪资要求', '不写薪资时只能用市场分位兜底，容易收到明显低于预期的岗位。');
+  }
+
+  // 4. 方向 vs 技能
+  const tech = cp.tech_stack || [];
+  const roles = (nd.target_roles || []).concat((p.intent && p.intent.families) || []);
+  if(roles.length && tech.length){
+    push('ok', '方向有技能支撑', '想投「' + roles.slice(0, 3).join('、') + '」，档案里有 ' + tech.length +
+      ' 项技术栈（' + tech.slice(0, 6).join('、') + (tech.length > 6 ? ' …' : '') + '）。');
+  } else if(roles.length && !tech.length){
+    push('bad', '有方向但没技能栈', '方向写了 ' + roles.slice(0, 3).join('、') + '，但技术栈是空的：技能命中率会算成 0，排序会很靠后。');
+  }
+
+  // 5. 底线条件的可执行性
+  const deal = nd.deal_breakers || [];
+  if(deal.length){
+    push('ok', '底线写成了可执行条件', '「' + deal.join('、') + '」这几条能在卡片/详情阶段直接否决，不用人工逐条看。');
+  } else {
+    push('warn', '没写底线条件', '没有底线时，外包派驻、单休、纯销售这类岗位会混进推荐里，只能靠人工剔。');
+  }
+
+  // 6. 市场对比（有族数据才做，没有就明说）
+  let marketNote = '';
+  const fams = S.families && S.families.families || [];
+  if(floor && fams.length){
+    const meds = fams.map(f => f.metrics && f.metrics.salary_open_median).filter(v => v > 0);
+    if(meds.length){
+      meds.sort((a, b) => a - b);
+      const med = meds[Math.floor(meds.length / 2)];
+      if(floor > med){
+        push('warn', '底线高于这批岗位的中位薪', '底线 ' + (floor / 1000) + 'K，已采样本中位 ' + (med / 1000) +
+          'K。按这个底线筛，会砍掉一半以上。');
+      } else {
+        push('ok', '底线在市场区间内', '底线 ' + (floor / 1000) + 'K ≤ 样本中位 ' + (med / 1000) + 'K，能落地的岗位足够多。');
+      }
+    }
+  } else if(floor && !fams.length){
+    marketNote = '还没有岗位族市场数据（data/families.json），「底线能不能落地」这条暂时算不了。';
+  }
+
+  const bad = items.filter(i => i.lv === 'bad').length;
+  const warn = items.filter(i => i.lv === 'warn').length;
+  const score = Math.max(0, Math.min(100, completeness - bad * 14 - warn * 5));
+
+  return { at: new Date().toISOString(), items, score, completeness, missing, marketNote,
+           verdict: bad ? '先补齐' : (warn ? '可投，但有缺口' : '条件自洽') };
+}
+
+function showAnalysis(a){
+  S.analysis = a;
+  $('anaMeta').textContent = '分析于 ' + fmtTime(a.at);
+  $('anaScores').innerHTML =
+    '<div class="sc"><b>' + a.score + '</b><small>条件自洽度</small></div>' +
+    '<div class="sc"><b>' + a.completeness + '%</b><small>字段完备度</small></div>' +
+    '<div class="sc"><b>' + (a.missing.length || 0) + '</b><small>还缺字段</small></div>' +
+    '<div class="sc"><b style="font-size:15px">' + esc(a.verdict) + '</b><small>结论</small></div>';
+
+  const tag = { ok:'通过', warn:'注意', bad:'冲突' };
+  $('anaOut').innerHTML = a.items.map(i =>
+    '<div class="aitem ' + i.lv + '"><span class="tagv">' + tag[i.lv] + '</span>' +
+    '<span class="tx">' + esc(i.title) + '<small>' + esc(i.detail) + '</small></span></div>'
+  ).join('') + (a.marketNote ? '<div class="note">' + esc(a.marketNote) + '</div>' : '');
+}
+
+$('btnAnalyze').onclick = async () => {
+  $('anaMsg').className = 'msg'; $('anaMsg').textContent = '分析中…';
+  // 市场数据是可选增强：拿不到不影响本地规则分析
+  const fam = await API('/api/families?t=' + Date.now());
+  S.families = (fam && fam.ok) ? fam : null;
+  showAnalysis(localAnalyze());
+  $('anaMsg').className = 'msg ok';
+  $('anaMsg').textContent = S.families ? '已完成（含市场对比）' : '已完成（无市场数据，只做了自洽检查）';
+};
+
+/* ---------------- 交给 WorkBuddy ---------------- */
+function agentInstruction(job){
+  const p = S.profile || {};
+  const id = p.identity || {};
+  return [
+    '请在 WorkBuddy 会话中执行「简历与需求补全」（job ' + job.id + '）。',
+    '档案：' + JSON.stringify({ identity:id, needs:(p.needs||{}), tech:((p.conditions_profile||{}).tech_stack||[]) }),
+    '简历文本：GET /api/resume/text?id=' + ((((p.resume||{}).current||{}).id) || '<简历 id>'),
+    '',
+    '要做的事：',
+    '1. 从简历正文里核对年龄 / 学历 / 专业 / 届别 / 城市 / 工作年限 / 技术栈是否与档案一致，指出不一致的地方；',
+    '2. 按 JD 常见要求，指出技术栈里缺失但投递方向需要的关键项；',
+    '3. 检查求职需求是否自洽（薪资期望与底线、届别与年限、方向与技能覆盖）。',
+    '',
+    '回写：POST /api/job/' + job.id + '/result',
+    'body: {"ok":true,"summary":"一句话结论","data":{"schema":"profile-review/v1","fields":{},"issues":[]}}',
+    '硬约束：不编造经历、不改简历事实、不写姓名/电话/邮箱进档案；只提建议，由人工确认后写入。'
+  ].join('\n');
+}
+
+$('btnAgent').onclick = async () => {
+  const d = await API('/api/job', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ kind:'resume-rewrite', params:{ note:'核对档案与简历是否一致，指出缺口' },
+      command_text:'简历与需求补全' })
+  });
+  if(!d || !d.ok){
+    $('anaMsg').className = 'msg bad';
+    $('anaMsg').textContent = '创建任务失败：' + ((d && (d.err || d.code)) || '接口不可用');
+    return;
+  }
+  const job = d.job || {};
+  $('jobBox').classList.remove('hide');
+  $('jobState').textContent = job.status === 'pending' ? '排队中 · 等 WorkBuddy 取件' : (job.status || '');
+  $('jobHint').textContent = '任务已建在 jobs/ 下。回到 WorkBuddy 会话，把下面这段发给它即可。';
+  $('jobCmd').textContent = agentInstruction(job);
+  window.__jobId = job.id;
+  $('anaMsg').className = 'msg ok';
+  $('anaMsg').textContent = '任务已创建：' + job.id;
+  pollJob(job.id);
+};
+
+$('btnCopy').onclick = async () => {
+  const t = $('jobCmd').textContent || '';
+  try { await navigator.clipboard.writeText(t); $('anaMsg').className = 'msg ok'; $('anaMsg').textContent = '已复制'; }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); $('anaMsg').textContent = '已复制'; } catch(e2){}
+    document.body.removeChild(ta);
+  }
+};
+$('btnJobRefresh').onclick = () => { if(window.__jobId) pollJob(window.__jobId); };
+
+async function pollJob(id, n){
+  const tries = n || 0;
+  const d = await API('/api/job/' + encodeURIComponent(id) + '?t=' + Date.now());
+  if(d && d.ok && d.job){
+    const st = d.job.status;
+    $('jobState').textContent = st === 'done' ? '已完成' : st === 'failed' ? '执行失败' :
+      st === 'pending' ? '排队中 · 等 WorkBuddy 取件' : '执行中';
+    if(st === 'done'){
+      const res = d.job.result || {};
+      if(res.summary) $('jobHint').textContent = res.summary;
+      $('anaMsg').className = 'msg ok'; $('anaMsg').textContent = 'WorkBuddy 已回写结果';
+      if(res.data && res.data.fields){
+        S.pending = { id: ((S.profile.resume||{}).current||{}).id, fields: res.data.fields, evidence: {}, note:'' };
+      }
+      return;
+    }
+    if(st === 'failed'){ $('anaMsg').className = 'msg bad'; $('anaMsg').textContent = '任务失败：' + (d.job.error || ''); return; }
+  }
+  if(tries < 60) setTimeout(() => pollJob(id, tries + 1), 4000);
+}
+
+/* ---------------- 启动 ---------------- */
+(async function init(){
+  const ok = await loadProfile();
+  await loadResumes();
+  const fam = await API('/api/families?t=' + Date.now());
+  S.families = (fam && fam.ok) ? fam : null;
+  if(ok) showAnalysis(localAnalyze());
+})();
+</script>
+</body></html>

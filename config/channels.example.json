@@ -1,36 +1,48 @@
 {
   "schema": "channels/v1",
-  "_note": "渠道单一源。真实实例值放 config/local/channels.json（gitignored）；prob 段供概率引擎读取，新增渠道只需改这一处。",
+  "_note": "渠道单一源：渠道名、顺序、CSV 表头、概率渠道加分全在这里。加一个投递渠道只需改这一处。要换成自己的渠道清单，复制到 config/local/channels.json 再改。",
   "channels": [
     {
       "key": "campus",
-      "label": "<CHANNEL_1_LABEL>",
+      "label": "校招",
       "type": "campus",
       "platform": null,
-      "csv_label": "<CHANNEL_1_LABEL>",
-      "type_label": "<CHANNEL_1_TYPE>",
+      "csv_label": "校招",
+      "type_label": "校招网申",
       "order": 1,
       "enabled": true,
       "account_hint": null,
-      "prob": { "add": 0, "why": "<PROB_CHANNEL_1_NOTE>" }
+      "prob": { "add": 0, "why": "校招走网申流程：周期长、确定性高，进度主要由对方排期决定" }
     },
     {
-      "key": "platform_a",
-      "label": "<CHANNEL_2_LABEL>",
+      "key": "boss",
+      "label": "BOSS",
       "type": "platform",
-      "platform": "<PLATFORM_ID>",
-      "csv_label": "<CHANNEL_2_LABEL>",
-      "type_label": "<CHANNEL_2_TYPE>",
+      "platform": "boss",
+      "csv_label": "BOSS",
+      "type_label": "BOSS直聘",
       "order": 2,
       "enabled": true,
       "account_hint": null,
-      "prob": { "add": 0, "why": "<PROB_CHANNEL_2_NOTE>" }
+      "prob": { "add": 0, "why": "可以直接和 HR 对话，推进速度取决于你的下一次回复" }
+    },
+    {
+      "key": "zhilian",
+      "label": "智联",
+      "type": "platform",
+      "platform": "zhilian",
+      "csv_label": "智联",
+      "type_label": "智联招聘",
+      "order": 3,
+      "enabled": true,
+      "account_hint": null,
+      "prob": { "add": 0, "why": "以 HR 主动查看简历为主，适合投完等回复" }
     }
   ],
-  "csv_order": [],
+  "csv_order": ["campus", "boss", "zhilian"],
   "labels": {
-    "app_title": "<APP_TITLE>",
-    "workbench_title": "<WORKBENCH_TITLE>",
-    "csv_main_header": "<CSV_SOURCE_HEADER>"
+    "app_title": "求职台账",
+    "workbench_title": "求职工作台",
+    "csv_main_header": "来源"
   }
 }
